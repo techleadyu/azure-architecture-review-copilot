@@ -1,4 +1,3 @@
-from openai import AzureOpenAI
 from config.settings import Settings
 
 
@@ -13,6 +12,7 @@ class FoundryIQClient:
     def __init__(self):
         self.demo_mode = Settings.DEMO_MODE
         if not self.demo_mode:
+            from openai import AzureOpenAI
             self.client = AzureOpenAI(
                 azure_endpoint=Settings.AZURE_OPENAI_ENDPOINT,
                 api_key=Settings.AZURE_OPENAI_API_KEY,

@@ -1,8 +1,3 @@
-from azure.identity import DefaultAzureCredential, ClientSecretCredential
-from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.compute import ComputeManagementClient
-from azure.mgmt.network import NetworkManagementClient
-from azure.mgmt.authorization import AuthorizationManagementClient
 from config.settings import Settings
 
 
@@ -19,6 +14,7 @@ class AzureClient:
     def _get_credential(self):
         if self._credential:
             return self._credential
+        from azure.identity import DefaultAzureCredential, ClientSecretCredential
         if Settings.AZURE_CLIENT_ID and Settings.AZURE_CLIENT_SECRET:
             self._credential = ClientSecretCredential(
                 tenant_id=Settings.AZURE_TENANT_ID,
@@ -34,6 +30,7 @@ class AzureClient:
         if Settings.DEMO_MODE:
             return self._demo_context()
         try:
+            from azure.mgmt.resource import ResourceManagementClient
             cred = self._get_credential()
             resource_client = ResourceManagementClient(cred, self.subscription_id)
             resources = list(resource_client.resources.list())
