@@ -18,10 +18,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS: responsive, dark/light/system-aware ───────────────────────
+# ── Custom CSS ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-  /* ── CSS Variables for Light / Dark themes ── */
   :root {
     --bg-primary:       #f8fafc;
     --bg-card:          #ffffff;
@@ -45,17 +44,12 @@ st.markdown("""
     --bg-high:          #fef3c7;
     --bg-medium:        #fef9c3;
     --bg-low:           #dcfce7;
-    --chart-1:          #6f42c1;
-    --chart-2:          #10b981;
-    --chart-3:          #3b82f6;
-    --chart-4:          #f59e0b;
     --shadow:           0 1px 4px rgba(0,0,0,.08);
     --shadow-card:      0 2px 12px rgba(0,0,0,.06);
     --radius:           12px;
     --radius-sm:        8px;
   }
 
-  /* ── Dark mode overrides via media query ── */
   @media (prefers-color-scheme: dark) {
     :root {
       --bg-primary:     #0d1117;
@@ -72,26 +66,33 @@ st.markdown("""
     }
   }
 
+  /* ── Hide Streamlit native header and deploy button ── */
+  header[data-testid="stHeader"],
+  [data-testid="stToolbar"],
+  .stDeployButton,
+  #MainMenu { display: none !important; }
+  footer { visibility: hidden; }
+
   /* ── Base ── */
   html, body, [class*="css"] {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
   }
-  #MainMenu, footer { visibility: hidden; }
-  .block-container { padding: 0 !important; max-width: 100% !important; }
+  .block-container { padding: 1rem 1.5rem 2rem !important; max-width: 100% !important; }
 
   /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
-
   /* ── Sidebar ── */
   [data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
     min-width: 240px !important;
     max-width: 260px !important;
-    border-right: 1px solid var(--border-sidebar);
+    border-right: 1px solid var(--border-sidebar) !important;
+    padding-top: 0 !important;
   }
+  [data-testid="stSidebar"] > div { padding-top: 0 !important; }
   [data-testid="stSidebar"] * { color: var(--text-sidebar) !important; }
   [data-testid="stSidebar"] h1,
   [data-testid="stSidebar"] h2,
@@ -116,11 +117,24 @@ st.markdown("""
     background: var(--bg-sidebar-hover) !important;
     color: #e6edf3 !important;
   }
-  [data-testid="stSidebar"] .stButton[data-active="true"] > button,
   [data-testid="stSidebar"] button[kind="primary"] {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)) !important;
     color: #ffffff !important;
   }
+  [data-testid="stSidebar"] .stButton > button:focus { box-shadow: none !important; }
+  [data-testid="stSidebar"] hr { border-color: var(--border-sidebar) !important; }
+  [data-testid="stSidebar"] .stExpander {
+    border-color: var(--border-sidebar) !important;
+    background: transparent !important;
+  }
+  [data-testid="stSidebar"] .stTextInput input,
+  [data-testid="stSidebar"] .stSelectbox select {
+    background: var(--bg-env-card) !important;
+    color: #e6edf3 !important;
+    border-color: var(--border-sidebar) !important;
+    font-size: 12px !important;
+  }
+  [data-testid="stSidebar"] label { color: var(--text-sidebar-dim) !important; font-size: 11px !important; }
 
   /* Environment card */
   .env-card {
@@ -128,16 +142,22 @@ st.markdown("""
     padding: 14px; margin: 6px 4px;
     border: 1px solid var(--border-sidebar);
   }
-  .env-label { font-size: 10px; color: var(--text-sidebar-dim); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .env-label { font-size: 10px; color: var(--text-sidebar-dim); margin-bottom: 2px;
+    text-transform: uppercase; letter-spacing: .5px; }
   .env-value { font-size: 13px; color: #e6edf3 !important; font-weight: 600; }
-  .dot-connected { display:inline-block; width:7px; height:7px; border-radius:50%; background:#3fb950; margin-right:5px; vertical-align:middle; }
+  .dot-connected { display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:#3fb950; margin-right:5px; vertical-align:middle; }
 
   /* ── Main area ── */
-  .main-wrap { background: var(--bg-primary); min-height: 100vh; padding: 0 16px 40px; }
+  .main-wrap { background: var(--bg-primary); }
 
   /* Greeting */
-  .greeting-row { display:flex; justify-content:space-between; align-items:center; padding: 16px 4px 8px; flex-wrap: wrap; gap: 10px; }
-  .greeting-title { font-size: clamp(18px, 2.5vw, 26px); font-weight: 800; color: var(--text-primary); margin:0; }
+  .greeting-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 8px 0 10px; flex-wrap: wrap; gap: 10px; margin-bottom: 4px;
+  }
+  .greeting-title { font-size: clamp(18px,2.5vw,26px); font-weight: 800;
+    color: var(--text-primary); margin:0; }
   .greeting-sub { font-size: 13px; color: var(--text-secondary); margin:0; }
   .action-btn {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
@@ -160,14 +180,16 @@ st.markdown("""
   .banner-left { flex: 1; min-width: 260px; }
   .banner-title { font-size: 15px; font-weight: 700; color: #ffffff; }
   .banner-sub { font-size: 11px; color: #8b9dc3; margin-bottom: 16px; }
-  .banner-stats { display: flex; align-items: center; gap: clamp(12px,3vw,32px); flex-wrap: wrap; }
+  .banner-stats { display: flex; align-items: center; gap: clamp(10px,2.5vw,24px); flex-wrap: nowrap; overflow-x: auto; }
   .score-block { text-align:center; }
   .score-num { font-size: clamp(28px,4vw,42px); font-weight: 900; line-height:1; }
   .score-denom { font-size: 16px; color: #8b9dc3; }
-  .score-label { font-size: 10px; color: #8b9dc3; margin-top:2px; text-transform: uppercase; letter-spacing: .5px; }
-  .stat-blk { text-align:center; padding: 0 8px; }
+  .score-label { font-size: 10px; color: #8b9dc3; margin-top:2px;
+    text-transform: uppercase; letter-spacing: .5px; }
+  .stat-blk { text-align:center; padding: 0 6px; }
   .stat-n { font-size: clamp(18px,3vw,26px); font-weight: 800; line-height:1.1; }
-  .stat-l { font-size: 10px; color: #8b9dc3; margin-top:2px; text-transform: uppercase; letter-spacing: .4px; }
+  .stat-l { font-size: 10px; color: #8b9dc3; margin-top:2px;
+    text-transform: uppercase; letter-spacing: .4px; }
   .n-crit { color: #ff6b6b; }
   .n-high { color: #ffa94d; }
   .n-med  { color: #ffd43b; }
@@ -185,49 +207,49 @@ st.markdown("""
   .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); transform: translateY(-1px); }
 
   /* ── Section headers ── */
-  .sec-hdr { display:flex; justify-content:space-between; align-items:center; margin: 16px 0 10px; }
+  .sec-hdr { display:flex; justify-content:space-between; align-items:center;
+    margin: 16px 0 10px; }
   .sec-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-  .sec-link { font-size: 12px; color: var(--accent-blue); cursor: pointer; text-decoration: none; }
+  .sec-link { font-size: 12px; color: var(--accent-blue); cursor: pointer; }
 
   /* ── Agent cards ── */
   .agent-card {
-    background: var(--bg-card); border: 1px solid var(--border);
+    background: #1a2235; border: 1px solid #2d3f4e;
     border-radius: var(--radius); padding: 16px;
     box-shadow: var(--shadow); transition: all .2s; height: 100%;
   }
-  .agent-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); transform: translateY(-2px); }
+  .agent-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.25); transform: translateY(-2px); }
   .agent-hdr { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
   .agent-ico {
     width:38px; height:38px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
   }
-  .ico-sec { background: #e8f0fe; }
-  .ico-cost { background: #e6f9f0; }
-  .ico-idn { background: #f0e8fe; }
-  .ico-rel { background: #e8f4fe; }
-  @media (prefers-color-scheme: dark) {
-    .ico-sec { background:#1a2a4a; } .ico-cost { background:#0d2e20; }
-    .ico-idn { background:#2a1a4a; } .ico-rel { background:#0d2030; }
-  }
-  .agent-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-  .agent-stat { font-size: 11px; color: var(--text-secondary); margin: 2px 0; }
+  .ico-sec  { background: #1a2a4a; }
+  .ico-cost { background: #0d2e20; }
+  .ico-idn  { background: #2a1a4a; }
+  .ico-rel  { background: #0d2030; }
+  .agent-name { font-size: 14px; font-weight: 700; color: #e6edf3; }
+  .agent-stat { font-size: 11px; color: #8b949e; margin: 2px 0; }
+
+  /* Risk level labels inside agent cards */
   .risk-lbl {
     display:inline-block; padding: 3px 10px; border-radius: 4px;
     font-size: 11px; font-weight: 700; margin: 8px 0 4px;
   }
-  .lbl-crit { background:var(--bg-critical); color:var(--risk-critical); }
-  .lbl-high { background:var(--bg-high); color:var(--risk-high); }
-  .lbl-med  { background:var(--bg-medium); color:var(--risk-medium); }
-  .lbl-low  { background:var(--bg-low); color:var(--risk-low); }
-  .pbar-bg { background:#e8ecf0; border-radius:4px; height:6px; margin-top:8px; overflow:hidden; }
-  @media (prefers-color-scheme: dark) { .pbar-bg { background:#30363d; } }
+  .lbl-critical { background:#3d1515; color:#ff6b6b; }
+  .lbl-high     { background:#3d2a00; color:#ffa94d; }
+  .lbl-medium   { background:#2d2600; color:#ffd43b; }
+  .lbl-low      { background:#0d2e1a; color:#69db7c; }
+
+  .pbar-bg { background:#2d3748; border-radius:4px; height:6px; margin-top:8px; overflow:hidden; }
   .pbar-fill { height:6px; border-radius:4px; transition: width .6s ease; }
-  .pbar-crit { background: var(--risk-critical); }
-  .pbar-high { background: var(--risk-high); }
-  .pbar-med  { background: var(--risk-medium); }
-  .pbar-low  { background: var(--risk-low); }
-  .pbar-blue { background: var(--accent-blue); }
-  .pct-label { font-size:10px; color:var(--text-secondary); text-align:right; margin-top:2px; }
+  .pbar-critical { background: #dc2626; }
+  .pbar-high     { background: #d97706; }
+  .pbar-medium   { background: #ca8a04; }
+  .pbar-low      { background: #16a34a; }
+  .pbar-blue     { background: var(--accent-blue); }
+  .pct-label { font-size:10px; color:#8b949e; text-align:right; margin-top:2px; }
 
   /* ── Risk rows ── */
   .risk-row {
@@ -242,9 +264,12 @@ st.markdown("""
     font-size:12px; font-weight:700; color:var(--text-primary); flex-shrink:0;
   }
   .risk-info { flex:1; min-width:0; }
-  .risk-title { font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .risk-desc  { font-size:11px; color:var(--text-secondary); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sev-badge { padding:2px 10px; border-radius:4px; font-size:11px; font-weight:700; flex-shrink:0; white-space:nowrap; }
+  .risk-title { font-size:13px; font-weight:600; color:var(--text-primary);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .risk-desc  { font-size:11px; color:var(--text-secondary); margin-top:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sev-badge { padding:2px 10px; border-radius:4px; font-size:11px;
+    font-weight:700; flex-shrink:0; white-space:nowrap; }
   .sev-Critical { background:var(--bg-critical); color:var(--risk-critical); }
   .sev-High     { background:var(--bg-high);     color:var(--risk-high); }
   .sev-Medium   { background:var(--bg-medium);   color:var(--risk-medium); }
@@ -256,29 +281,35 @@ st.markdown("""
     padding: 16px; text-align:center;
     background: var(--bg-card); transition: all .2s;
   }
-  .bp-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,120,212,.12); }
-  .bp-card.bp-active { border: 2px solid var(--accent-blue); background: #f0f7ff; }
-  @media (prefers-color-scheme: dark) { .bp-card.bp-active { background: #0d1e35; } }
+  .bp-card:hover { border-color: var(--accent-blue); transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,120,212,.12); }
+  .bp-active { border: 2px solid var(--accent-blue) !important; background: #f0f7ff; }
+  @media (prefers-color-scheme: dark) { .bp-active { background: #0d1e35 !important; } }
   .bp-icon { font-size: 28px; margin-bottom: 6px; }
   .bp-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
   .bp-desc { font-size: 11px; color: var(--text-secondary); margin: 4px 0; }
   .bp-match-good { font-size:12px; font-weight:700; color:var(--risk-low); }
   .bp-match-norm { font-size:12px; font-weight:700; color:var(--accent-blue); }
 
-  /* ── Right chat panel ── */
+  /* ── Chat panel ── */
+  .chat-panel {
+    border-left: 1px solid var(--border); height: 100%;
+    background: var(--bg-card);
+  }
   .chat-panel-hdr {
     display:flex; justify-content:space-between; align-items:center;
     padding: 14px 12px; border-bottom: 1px solid var(--border);
     background: var(--bg-card); position: sticky; top: 0; z-index: 10;
+    border-radius: var(--radius) var(--radius) 0 0;
   }
   .chat-hdr-title { font-size:14px; font-weight:700; color:var(--text-primary); }
   .chat-bubble {
     background: var(--bg-primary); border-radius: var(--radius-sm);
-    padding:12px; margin:12px; font-size:13px; color:var(--text-primary); line-height:1.5;
-    border: 1px solid var(--border);
+    padding:12px; margin:12px; font-size:13px; color:var(--text-primary);
+    line-height:1.5; border: 1px solid var(--border);
   }
-  .chat-prompt-hdr { font-size:13px; font-weight:600; color:var(--text-primary); margin:8px 12px 4px; }
-  .waf-section { padding:12px; border-top:1px solid var(--border); background: var(--bg-card); }
+  .chat-prompt-hdr { font-size:13px; font-weight:600; color:var(--text-primary); margin:8px 12px 6px; }
+  .waf-section { padding:12px; border-top:1px solid var(--border); }
   .waf-section-title { font-size:13px; font-weight:700; color:var(--text-primary); }
   .waf-focus-text { font-size:11px; color:var(--text-secondary); margin:2px 0 8px; }
 
@@ -288,13 +319,14 @@ st.markdown("""
     .banner-robot { display: none; }
   }
   @media (max-width: 768px) {
-    .banner-stats { gap: 12px; }
+    .banner-stats { gap: 8px; }
     .score-num { font-size: 24px; }
     .stat-n { font-size: 18px; }
     .greeting-title { font-size: 18px; }
+    .block-container { padding: 0.5rem !important; }
   }
 
-  /* ── Download buttons styling ── */
+  /* ── Streamlit component overrides ── */
   .stDownloadButton > button {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)) !important;
     color: white !important; border: none !important;
@@ -302,20 +334,20 @@ st.markdown("""
     font-weight: 600 !important; font-size: 13px !important;
     padding: 10px 16px !important;
     box-shadow: 0 2px 8px rgba(0,120,212,.25) !important;
-    transition: opacity .15s !important;
+    transition: opacity .15s !important; width: 100% !important;
   }
   .stDownloadButton > button:hover { opacity: .88 !important; }
 
-  /* ── Expander styling ── */
   .streamlit-expanderHeader {
     font-size: 13px !important; color: var(--text-primary) !important;
     background: var(--bg-primary) !important;
     border-radius: var(--radius-sm) !important;
   }
-
-  /* ── Chat input ── */
   .stChatInput { border-radius: var(--radius-sm) !important; }
   .stChatInput > div { border-color: var(--border) !important; }
+
+  /* Main area vertical column gap */
+  [data-testid="stHorizontalBlock"] { gap: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -362,28 +394,19 @@ high_count = sum(1 for r in all_risks_flat if r["severity"] == "High")
 medium_count = sum(1 for r in all_risks_flat if r["severity"] == "Medium")
 low_count = sum(1 for r in all_risks_flat if r["severity"] == "Low")
 
-agent_icons_html = {"Security": "🛡️", "Cost": "💲", "Identity": "👤", "Reliability": "☁️"}
-agent_icon_class = {"Security": "agent-icon-sec", "Cost": "agent-icon-cost",
-                    "Identity": "agent-icon-idn", "Reliability": "agent-icon-rel"}
-sev_class = {"Critical": "sev-critical", "High": "sev-high", "Medium": "sev-medium", "Low": "sev-low"}
-risk_badge_class = {"High": "risk-high", "Critical": "risk-critical",
-                    "Medium": "risk-medium", "Low": "risk-low"}
-fill_class = {"Critical": "fill-critical", "High": "fill-high",
-              "Medium": "fill-medium", "Low": "fill-low"}
+agent_icons = {"Security": "🛡️", "Cost": "💰", "Identity": "👤", "Reliability": "☁️"}
+agent_ico_cls = {"Security": "ico-sec", "Cost": "ico-cost", "Identity": "ico-idn", "Reliability": "ico-rel"}
 
 def score_to_risk_level(s):
-    if s < 60: return "Critical Risk", "risk-critical"
-    if s < 75: return "High Risk", "risk-high"
-    if s < 90: return "Medium Risk", "risk-medium"
-    return "Low Risk", "risk-low"
+    if s < 60: return "Critical Risk", "critical"
+    if s < 75: return "High Risk", "high"
+    if s < 90: return "Medium Risk", "medium"
+    return "Low Risk", "low"
 
-# ── LAYOUT: sidebar | main | chat ──────────────────────────────────────────
-sidebar_col, main_col, chat_col = st.columns([1.1, 4.2, 1.7])
-
-# ════════════════════════ SIDEBAR ════════════════════════
-with sidebar_col:
+# ════════════════════════ SIDEBAR (st.sidebar) ════════════════════════
+with st.sidebar:
     st.markdown("""
-    <div style="padding:20px 8px 8px;">
+    <div style="padding:20px 10px 8px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <div style="background:linear-gradient(135deg,#0078d4,#6f42c1);width:40px;height:40px;
           border-radius:10px;display:flex;align-items:center;justify-content:center;
@@ -397,6 +420,8 @@ with sidebar_col:
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<hr style='border-color:#2d3f4e;margin:4px 0 6px;'>", unsafe_allow_html=True)
+
     nav_items = [
         ("🏠", "Overview"), ("⚠️", "Risk Dashboard"), ("📋", "Findings"),
         ("💡", "Recommendations"), ("🏗️", "Blueprints"),
@@ -404,34 +429,28 @@ with sidebar_col:
     ]
     for icon, label in nav_items:
         is_active = st.session_state.active_nav == label
-        cls = "nav-item active" if is_active else "nav-item"
         if st.button(f"{icon}  {label}", key=f"nav_{label}",
                      use_container_width=True,
                      type="primary" if is_active else "secondary"):
             st.session_state.active_nav = label
             st.rerun()
 
-    st.markdown("<hr style='border-color:#1c2a35;margin:10px 8px;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color:#2d3f4e;margin:10px 0 6px;'>", unsafe_allow_html=True)
 
-    # Environment card
     st.markdown(f"""
     <div class="env-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <span style="font-size:13px;font-weight:700;color:#e6edf3;">Environment</span>
-        <span><span class="connected-dot"></span>
+        <span><span class="dot-connected"></span>
           <span style="font-size:11px;color:#3fb950;">Connected</span></span>
       </div>
-      <div class="env-label">Subscription</div>
+      <div class="env-label">SUBSCRIPTION</div>
       <div class="env-value">{st.session_state.subscription}</div>
-      <div class="env-label" style="margin-top:8px;">Landing Zone</div>
+      <div class="env-label" style="margin-top:8px;">LANDING ZONE</div>
       <div class="env-value">{st.session_state.landing_zone}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("🔍 View Details →", use_container_width=True):
-        pass
-
-    # Settings expander in sidebar
     with st.expander("⚙️ Review Settings"):
         new_sub = st.text_input("Subscription", value=st.session_state.subscription, key="sub_inp")
         new_lz = st.text_input("Landing Zone", value=st.session_state.landing_zone, key="lz_inp")
@@ -449,10 +468,14 @@ with sidebar_col:
                 )
             st.rerun()
 
+# ════════════════════════ MAIN + CHAT COLUMNS ════════════════════════
+main_col, chat_col = st.columns([3.2, 1.3])
+
 # ════════════════════════ MAIN CONTENT ════════════════════════
 with main_col:
-    # Top header
     now = datetime.now().strftime("%b %d, %Y at %I:%M %p")
+
+    # ── Greeting row ──
     st.markdown(f"""
     <div class="greeting-row">
       <div>
@@ -506,7 +529,7 @@ with main_col:
 
     # ── AI Agent Analysis ──
     st.markdown("""
-    <div class="sec-hdr" style="margin-top:16px;">
+    <div class="sec-hdr">
       <span class="sec-title">AI Agent Analysis</span>
       <span class="sec-link">View all agents →</span>
     </div>
@@ -515,31 +538,30 @@ with main_col:
     agent_cols = st.columns(4)
     for i, (cat, data) in enumerate(agent_results.items()):
         s = data["risk_score"]
-        rlabel, rclass = score_to_risk_level(s)
-        pbar_cls = "pbar-" + rlabel.split()[0].lower()
-        icon = agent_icons_html.get(cat, "🔷")
-        icls = agent_icon_class.get(cat, "")
+        rlabel, rkey = score_to_risk_level(s)
+        icon = agent_icons.get(cat, "🔷")
+        icls = agent_ico_cls.get(cat, "")
         with agent_cols[i]:
             st.markdown(f"""
             <div class="agent-card">
               <div class="agent-hdr">
                 <div class="agent-ico {icls}">{icon}</div>
-                <div class="agent-name">{cat} Agent</div>
+                <span class="agent-name">{cat} Agent</span>
               </div>
               <div class="agent-stat">Scanned {data['resources_scanned']} resources</div>
               <div class="agent-stat">Identified {data['risk_count']} risks</div>
-              <div><span class="risk-lbl lbl-{rlabel.split()[0].lower()}">{rlabel}</span></div>
-              <div class="pbar-bg"><div class="pbar-fill {pbar_cls}" style="width:{s}%;"></div></div>
+              <div><span class="risk-lbl lbl-{rkey}">{rlabel}</span></div>
+              <div class="pbar-bg"><div class="pbar-fill pbar-{rkey}" style="width:{s}%;"></div></div>
               <div class="pct-label">{s}%</div>
             </div>
             """, unsafe_allow_html=True)
 
-    # ── Top 5 Risks + Donut Chart ──
-    risks_col, chart_col = st.columns([3, 2])
+    # ── Top 5 Risks + Chart ──
+    risks_col, chart_col2 = st.columns([3, 2])
 
     with risks_col:
         st.markdown("""
-        <div class="sec-hdr" style="margin-top:16px;">
+        <div class="sec-hdr">
           <span class="sec-title">Top 5 Risks</span>
           <span class="sec-link">View all</span>
         </div>
@@ -562,7 +584,6 @@ with main_col:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Expandable details
         for i, r in enumerate(top5, 1):
             with st.expander(f"Details: {r['title']}", expanded=False):
                 c1, c2, c3 = st.columns(3)
@@ -575,9 +596,9 @@ with main_col:
                 if r.get("estimated_savings", 0) > 0:
                     st.success(f"💰 Est. savings: ${r['estimated_savings']:,.0f}/mo")
 
-    with chart_col:
+    with chart_col2:
         st.markdown("""
-        <div class="sec-hdr" style="margin-top:16px;">
+        <div class="sec-hdr">
           <span class="sec-title">Risk by Category</span>
           <span class="sec-link">View details</span>
         </div>
@@ -590,19 +611,20 @@ with main_col:
         fig = go.Figure(data=[go.Pie(
             labels=cats, values=counts, hole=0.62,
             marker=dict(colors=["#6f42c1", "#10b981", "#3b82f6", "#f59e0b"],
-                        line=dict(color='#ffffff', width=2)),
+                        line=dict(color='rgba(0,0,0,0)', width=2)),
             textinfo="none",
             hovertemplate="%{label}<br>%{value} risks (%{percent})<extra></extra>",
         )])
         fig.add_annotation(text=f"<b>{total_risks}</b>", x=0.5, y=0.55,
-                           font_size=24, font_color="#1a1a2e", showarrow=False)
+                           font_size=24, font_color="#e6edf3", showarrow=False)
         fig.add_annotation(text="Total Risks", x=0.5, y=0.42,
-                           font_size=11, font_color="#6b7280", showarrow=False)
+                           font_size=11, font_color="#8b949e", showarrow=False)
         fig.update_layout(
             margin=dict(t=10, b=0, l=0, r=0), height=240,
             showlegend=True,
-            legend=dict(orientation="v", x=0.75, y=0.5,
-                        font=dict(size=11), bgcolor="rgba(0,0,0,0)"),
+            legend=dict(orientation="v", x=0.72, y=0.5,
+                        font=dict(size=11, color="#e6edf3"),
+                        bgcolor="rgba(0,0,0,0)"),
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -656,27 +678,20 @@ with chat_col:
     waf_pillar_data = WAF_PILLARS.get(st.session_state.waf_focus, WAF_PILLARS["security"])
 
     st.markdown("""
-    <div style="border-left:1px solid #e8ecf0;height:100%;padding:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;
-        padding:14px 12px;border-bottom:1px solid #e8ecf0;background:white;
-        position:sticky;top:0;z-index:10;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:20px;">🤖</span>
-          <span style="font-size:14px;font-weight:700;color:#1a1a2e;">Architecture Copilot</span>
-        </div>
-        <span style="font-size:16px;color:#9ca3af;cursor:pointer;">✕</span>
+    <div class="chat-panel-hdr">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">🤖</span>
+        <span class="chat-hdr-title">Architecture Copilot</span>
       </div>
+      <span style="font-size:16px;color:#9ca3af;cursor:pointer;">✕</span>
+    </div>
     """, unsafe_allow_html=True)
 
-    # Initial message
     st.markdown("""
-    <div style="background:#f9fafb;border-radius:8px;padding:12px;margin:12px;
-      font-size:13px;color:#374151;line-height:1.5;">
+    <div class="chat-bubble">
       Hi Architect! I've completed the review of your Azure environment. Here are the key insights.
     </div>
-    <div style="font-size:13px;font-weight:600;color:#374151;margin:12px 12px 6px;">
-      What would you like to do next?
-    </div>
+    <div class="chat-prompt-hdr">What would you like to do next?</div>
     """, unsafe_allow_html=True)
 
     quick_actions = [
@@ -689,39 +704,40 @@ with chat_col:
         if st.button(f"{icon}  {label}", key=f"qa_{label}", use_container_width=True):
             st.session_state.chat_query = label
 
-    # Chat response
+    st.markdown("<hr style='margin:8px 0;border-color:var(--border);'>", unsafe_allow_html=True)
+
     query = st.session_state.chat_query
-    st.markdown("<hr style='margin:10px 12px;border-color:#f3f4f6;'>", unsafe_allow_html=True)
+    if "top risks" in query.lower():
+        st.markdown("**🚨 Top Critical Risks:**")
+        for r in top5[:3]:
+            sev = r["severity"]
+            st.markdown(
+                f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">'
+                f'<span class="sev-badge sev-{sev}" style="padding:1px 6px;font-size:10px;">{sev}</span>'
+                f'&nbsp;{r["title"]}</div>',
+                unsafe_allow_html=True)
+    elif "remediation" in query.lower():
+        st.markdown("**🛠️ Prioritized Remediation:**")
+        for i, r in enumerate(top5, 1):
+            st.markdown(
+                f"<div style='font-size:12px;padding:3px 0;'>{i}. <b>{r['title']}</b><br>"
+                f"<span style='color:var(--text-secondary);'>{r['remediation'][:80]}...</span></div>",
+                unsafe_allow_html=True)
+    elif "caf" in query.lower():
+        st.markdown("**🏛️ CAF Alignment:**")
+        st.markdown(
+            "<div style='font-size:12px;'>Your environment maps to <b>Enterprise Scale Landing Zone</b>. "
+            "Key areas: Management Groups, Policy-driven governance, Hub-Spoke networking.</div>",
+            unsafe_allow_html=True)
+        st.markdown("[📖 CAF Enterprise Scale →](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/)")
+    elif "well-architected" in query.lower():
+        st.markdown("**🏛️ WAF Pillar Summary:**")
+        for pk, pd in WAF_PILLARS.items():
+            st.markdown(
+                f"<div style='font-size:11px;padding:3px 0;'>{pd['icon']} <b>{pd['name']}</b></div>",
+                unsafe_allow_html=True)
 
-    with st.container():
-        if "top risks" in query.lower():
-            st.markdown("**🚨 Top Critical Risks:**")
-            for r in top5[:3]:
-                scls = sev_class.get(r["severity"], "sev-medium")
-                st.markdown(f"""<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;">
-                  <span class="sev-badge {scls}" style="padding:1px 6px;border-radius:3px;
-                  font-size:10px;">{r['severity']}</span>&nbsp;{r['title']}</div>""",
-                            unsafe_allow_html=True)
-        elif "remediation" in query.lower():
-            st.markdown("**🛠️ Prioritized Remediation:**")
-            for i, r in enumerate(top5, 1):
-                st.markdown(f"<div style='font-size:12px;padding:3px 0;'>{i}. <b>{r['title']}</b><br>"
-                            f"<span style='color:#6b7280;'>{r['remediation'][:80]}...</span></div>",
-                            unsafe_allow_html=True)
-        elif "caf" in query.lower():
-            st.markdown("**🏛️ CAF Alignment:**")
-            st.markdown("""<div style='font-size:12px;color:#374151;'>Your environment maps to
-              <b>Enterprise Scale Landing Zone</b>. Key areas: Management Groups,
-              Policy-driven governance, Hub-Spoke networking.</div>""", unsafe_allow_html=True)
-            st.markdown("[📖 CAF Enterprise Scale →](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/)")
-        elif "well-architected" in query.lower():
-            st.markdown("**🏛️ WAF Pillar Summary:**")
-            for pk, pd in WAF_PILLARS.items():
-                st.markdown(f"<div style='font-size:11px;padding:3px 0;'>{pd['icon']} <b>{pd['name']}</b></div>",
-                            unsafe_allow_html=True)
-
-    # Chat input
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
     chat_input = st.chat_input("Ask me anything...", key="main_chat")
     if chat_input:
         st.session_state.chat_query = chat_input
@@ -729,15 +745,13 @@ with chat_col:
 
     # WAF Pillars section
     st.markdown(f"""
-    <div style="padding:14px 12px;border-top:1px solid #e8ecf0;margin-top:8px;">
+    <div class="waf-section">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:13px;font-weight:700;color:#1a1a2e;">Well-Architected Pillars</span>
-        <span style="font-size:12px;color:#0078d4;cursor:pointer;">Change</span>
+        <span class="waf-section-title">Well-Architected Pillars</span>
+        <span style="font-size:12px;color:var(--accent-blue);cursor:pointer;">Change</span>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin:4px 0 10px;">
-        Current Focus: <b>{waf_pillar_data['name']}</b>
-      </div>
-      <div style="display:flex;gap:8px;">
+      <div class="waf-focus-text">Current Focus: <b>{waf_pillar_data['name']}</b></div>
+    </div>
     """, unsafe_allow_html=True)
 
     waf_cols = st.columns(5)
@@ -748,10 +762,6 @@ with chat_col:
     for col, (pk, icon) in zip(waf_cols, waf_items):
         with col:
             is_active = pk == st.session_state.waf_focus
-            bg = "background:#e8f4ff;border:2px solid #0078d4;" if is_active else "border:1px solid #e8ecf0;"
-            if st.button(icon, key=f"waf_{pk}",
-                         help=WAF_PILLARS[pk]["name"]):
+            if st.button(icon, key=f"waf_{pk}", help=WAF_PILLARS[pk]["name"]):
                 st.session_state.waf_focus = pk
                 st.rerun()
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
