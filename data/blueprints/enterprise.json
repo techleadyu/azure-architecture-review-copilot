@@ -1,0 +1,27 @@
+{
+  "tier": "enterprise",
+  "name": "Enterprise Blueprint",
+  "description": "Advanced security, global scale, and compliance for large organizations. Aligns to Azure Enterprise Scale Landing Zone and CAF.",
+  "match_criteria": "resource_count >= 150",
+  "references": [
+    "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/architecture",
+    "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/azure-ad",
+    "https://learn.microsoft.com/azure/security/fundamentals/best-practices-and-patterns"
+  ],
+  "principles": [
+    "Advanced Security — Zero Trust, CMK encryption, Defender CSPM",
+    "High Availability — Multi-region active-active or active-passive",
+    "Global Scale — Azure Front Door, Traffic Manager, CDN",
+    "Enterprise Governance — Azure Policy initiatives, Management Groups, DINE policies"
+  ],
+  "recommended_services": [
+    "Azure Enterprise Scale Landing Zone",
+    "Azure Firewall Premium + DDoS Protection",
+    "Azure Application Gateway (WAF v2)",
+    "Azure Site Recovery (multi-region DR)",
+    "Microsoft Sentinel (SIEM/SOAR)",
+    "Azure Confidential Computing",
+    "Azure Arc (hybrid/multi-cloud)",
+    "Microsoft Purview (data governance)"
+  ]
+}

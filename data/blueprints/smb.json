@@ -1,0 +1,23 @@
+{
+  "tier": "smb",
+  "name": "SMB Blueprint",
+  "description": "Optimized for small teams and early-stage Azure adoption. Focus on simplicity, cost efficiency, and essential security controls.",
+  "match_criteria": "resource_count < 30",
+  "references": [
+    "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/",
+    "https://learn.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/hub-spoke"
+  ],
+  "principles": [
+    "Simplicity — minimize architecture complexity",
+    "Cost Efficiency — use consumption-based pricing",
+    "Essential Controls — MFA, RBAC, basic NSG rules",
+    "Scalable Foundation — design for future growth"
+  ],
+  "recommended_services": [
+    "Azure App Service (PaaS over IaaS)",
+    "Azure SQL Database (serverless tier)",
+    "Azure Storage (LRS/GRS)",
+    "Azure Key Vault (basic tier)",
+    "Microsoft Entra ID (free tier MFA)"
+  ]
+}

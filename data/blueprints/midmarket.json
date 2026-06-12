@@ -1,0 +1,25 @@
+{
+  "tier": "midmarket",
+  "name": "Mid-Market Blueprint",
+  "description": "Balanced governance and scalability for growing organizations. Standardized patterns with operational efficiency.",
+  "match_criteria": "30 <= resource_count < 150",
+  "references": [
+    "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/",
+    "https://learn.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/hub-spoke"
+  ],
+  "principles": [
+    "Standardized — consistent naming, tagging, and governance policies",
+    "Balanced Governance — Azure Policy + RBAC + Defender for Cloud",
+    "Resilient Design — zonal redundancy for critical services",
+    "Operational Efficiency — Azure Monitor, Log Analytics, auto-scaling"
+  ],
+  "recommended_services": [
+    "Hub-Spoke network topology",
+    "Azure Firewall (Standard)",
+    "Azure Kubernetes Service (AKS)",
+    "Azure SQL Managed Instance",
+    "Azure Defender for Cloud (Standard)",
+    "Azure Monitor + Log Analytics",
+    "Azure Backup (GRS vault)"
+  ]
+}
