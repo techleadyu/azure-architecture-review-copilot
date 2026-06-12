@@ -12,7 +12,13 @@
 
 > **Multi-agent AI system that orchestrates Security, Cost, Identity & Reliability agents to perform enterprise-grade Azure architecture reviews — powered by Foundry IQ + Azure OpenAI GPT-4o**
 
-[![Deploy to Azure](https://aka.ms/deploytoazure)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftechleadyu%2Fazure-architecture-review-copilot%2Fmaster%2Fazuredeploy.json)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftechleadyu%2Fazure-architecture-review-copilot%2Fmaster%2Fazuredeploy.json">
+  <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true" alt="Deploy to Azure" height="40">
+</a>
+&nbsp;
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftechleadyu%2Fazure-architecture-review-copilot%2Fmaster%2Fazuredeploy.json">
+  <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazuregov.svg?sanitize=true" alt="Deploy to Azure Gov" height="40">
+</a>
 
 </div>
 
@@ -289,7 +295,9 @@ pip install -r requirements.txt
 
 ## ☁️ Deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazure)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftechleadyu%2Fazure-architecture-review-copilot%2Fmaster%2Fazuredeploy.json)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftechleadyu%2Fazure-architecture-review-copilot%2Fmaster%2Fazuredeploy.json">
+  <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true" alt="Deploy to Azure" height="40">
+</a>
 
 Deploys: Azure OpenAI (GPT-4o) · Key Vault · App Service (Linux) · Log Analytics
 

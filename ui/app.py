@@ -18,20 +18,29 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS ─────────────────────────────────────────────────────────────
+# ── Handle query param for chat FAB toggle ─────────────────────────────────
+if "chat" in st.query_params:
+    if "show_chat" in st.session_state:
+        st.session_state.show_chat = not st.session_state.show_chat
+    else:
+        st.session_state.show_chat = True
+    st.query_params.clear()
+
+
 st.markdown("""
 <style>
+  /* ── Default: DARK theme ── */
   :root {
-    --bg-primary:       #f8fafc;
-    --bg-card:          #ffffff;
+    --bg-primary:       #0d1117;
+    --bg-card:          #161b22;
     --bg-sidebar:       #0f1923;
     --bg-sidebar-hover: #1c2a35;
     --bg-banner:        linear-gradient(135deg,#0d1b2a 0%,#1a2744 60%,#0f1f3d 100%);
     --bg-env-card:      #1c2a35;
-    --border:           #e8ecf0;
+    --border:           #30363d;
     --border-sidebar:   #2d3f4e;
-    --text-primary:     #1a1a2e;
-    --text-secondary:   #6b7280;
+    --text-primary:     #e6edf3;
+    --text-secondary:   #8b949e;
     --text-sidebar:     #c9d1d9;
     --text-sidebar-dim: #8b949e;
     --accent-blue:      #0078d4;
@@ -40,31 +49,26 @@ st.markdown("""
     --risk-high:        #d97706;
     --risk-medium:      #ca8a04;
     --risk-low:         #16a34a;
-    --bg-critical:      #fee2e2;
-    --bg-high:          #fef3c7;
-    --bg-medium:        #fef9c3;
-    --bg-low:           #dcfce7;
-    --shadow:           0 1px 4px rgba(0,0,0,.08);
-    --shadow-card:      0 2px 12px rgba(0,0,0,.06);
+    --bg-critical:      #3d1515;
+    --bg-high:          #3d2a00;
+    --bg-medium:        #2d2600;
+    --bg-low:           #0d2e1a;
+    --shadow:           0 1px 4px rgba(0,0,0,.4);
+    --shadow-card:      0 2px 12px rgba(0,0,0,.3);
     --radius:           12px;
     --radius-sm:        8px;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg-primary:     #0d1117;
-      --bg-card:        #161b22;
-      --border:         #30363d;
-      --text-primary:   #e6edf3;
-      --text-secondary: #8b949e;
-      --bg-critical:    #3d1515;
-      --bg-high:        #3d2a00;
-      --bg-medium:      #2d2600;
-      --bg-low:         #0d2e1a;
-      --shadow:         0 1px 4px rgba(0,0,0,.4);
-      --shadow-card:    0 2px 12px rgba(0,0,0,.3);
-    }
+  /* Streamlit app-level background — dark default */
+  .stApp,
+  [data-testid="stAppViewContainer"],
+  [data-testid="stMain"],
+  section[data-testid="stMain"] > div {
+    background-color: #0d1117 !important;
   }
+  /* Cards and secondary containers */
+  [data-testid="stVerticalBlock"],
+  [data-testid="column"] { background: transparent !important; }
 
   /* ── Hide Streamlit native header and deploy button ── */
   header[data-testid="stHeader"],
@@ -72,6 +76,61 @@ st.markdown("""
   .stDeployButton,
   #MainMenu { display: none !important; }
   footer { visibility: hidden; }
+
+  /* ── Remove default sidebar header whitespace ── */
+  [data-testid="stSidebarHeader"] { display: none !important; min-height: 0 !important; }
+  section[data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
+  [data-testid="stSidebarContent"] { padding-top: 0 !important; }
+
+  /* ── Sidebar expand button — ALWAYS visible when sidebar collapsed ── */
+  [data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 99998 !important;
+  }
+  [data-testid="stSidebarCollapsedControl"] button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: #1a2235 !important;
+    border: 1px solid #2d3f4e !important;
+    border-left: none !important;
+    color: #c9d1d9 !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding: 14px 8px !important;
+    cursor: pointer !important;
+    min-height: 48px !important;
+  }
+
+  /* ── Chat FAB — form-based, fixed bottom-right ── */
+  .chat-fab-wrap {
+    position: fixed !important;
+    bottom: 28px !important;
+    right: 28px !important;
+    z-index: 99999 !important;
+  }
+  .chat-fab-wrap form { margin: 0; padding: 0; }
+  .chat-fab-wrap button {
+    width: 58px !important; height: 58px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #0078d4, #6f42c1) !important;
+    border: 2px solid rgba(255,255,255,.15) !important;
+    color: white !important; font-size: 24px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 20px rgba(0,120,212,.55) !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    transition: transform .15s, box-shadow .15s !important;
+    line-height: 1 !important;
+  }
+  .chat-fab-wrap button:hover {
+    transform: scale(1.08) !important;
+    box-shadow: 0 6px 28px rgba(0,120,212,.7) !important;
+  }
 
   /* ── Base ── */
   html, body, [class*="css"] {
@@ -355,8 +414,42 @@ st.markdown("""
   .stChatInput { border-radius: var(--radius-sm) !important; }
   .stChatInput > div { border-color: var(--border) !important; }
 
-  /* Main area vertical column gap */
-  [data-testid="stHorizontalBlock"] { gap: 0 !important; }
+  /* ── Column gaps — specific overrides ── */
+  /* Agent cards and blueprint columns need gaps */
+  [data-testid="stHorizontalBlock"] { gap: 12px !important; }
+  /* Greeting row top — tighten vertical padding */
+  .greeting-row { margin-bottom: 0 !important; padding-bottom: 4px !important; }
+
+  /* ── Chat overlay panel ── */
+  .chat-overlay {
+    position: fixed !important;
+    bottom: 100px !important;
+    right: 20px !important;
+    width: 360px !important;
+    max-height: 70vh !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,.4) !important;
+    z-index: 99998 !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-overlay-hdr {
+    background: linear-gradient(135deg, #0078d4, #6f42c1);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 16px 16px 0 0;
+    flex-shrink: 0;
+  }
+  .chat-overlay-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
 </style>
 """, unsafe_allow_html=True)
 
@@ -368,13 +461,36 @@ if "active_nav" not in st.session_state:
 if "waf_focus" not in st.session_state:
     st.session_state.waf_focus = "security"
 if "show_chat" not in st.session_state:
-    st.session_state.show_chat = True
+    st.session_state.show_chat = False   # closed by default
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
 if "chat_query" not in st.session_state:
     st.session_state.chat_query = "Show me the top risks"
 if "subscription" not in st.session_state:
     st.session_state.subscription = "Contoso - Production"
 if "landing_zone" not in st.session_state:
     st.session_state.landing_zone = "Enterprise Scale"
+
+# ── Dynamic theme CSS injection ────────────────────────────────────────────
+if st.session_state.theme == "light":
+    st.markdown("""<style>
+  :root {
+    --bg-primary:   #f8fafc; --bg-card: #ffffff; --border: #e8ecf0;
+    --text-primary: #1a1a2e; --text-secondary: #6b7280;
+    --bg-critical:  #fee2e2; --bg-high: #fef3c7;
+    --bg-medium:    #fef9c3; --bg-low: #dcfce7;
+    --shadow:       0 1px 4px rgba(0,0,0,.08);
+    --shadow-card:  0 2px 12px rgba(0,0,0,.06);
+  }
+  .stApp, [data-testid="stAppViewContainer"],
+  [data-testid="stMain"], section[data-testid="stMain"] > div {
+    background-color: #f8fafc !important; color: #1a1a2e !important;
+  }
+  .greeting-title, .greeting-sub { color: #1a1a2e !important; }
+  .card { background: #ffffff !important; border: 1px solid #e8ecf0 !important; }
+  .sec-title { color: #1a1a2e !important; }
+  .agent-name, .agent-stat, .pct-label { color: #374151 !important; }
+  </style>""", unsafe_allow_html=True)
 
 # ── Run review on first load ───────────────────────────────────────────────
 def run_review(tier_key=None, pillar_key=None):
@@ -417,8 +533,8 @@ def score_to_risk_level(s):
 # ════════════════════════ SIDEBAR (st.sidebar) ════════════════════════
 with st.sidebar:
     st.markdown("""
-    <div style="padding:20px 10px 8px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+    <div style="padding:10px 10px 6px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
         <div style="background:linear-gradient(135deg,#0078d4,#6f42c1);width:40px;height:40px;
           border-radius:10px;display:flex;align-items:center;justify-content:center;
           font-size:20px;font-weight:900;color:white;">A</div>
@@ -479,49 +595,42 @@ with st.sidebar:
                 )
             st.rerun()
 
+    # ── Theme toggle at sidebar bottom ─────────────────────────────────────
+    st.markdown("<div style='margin-top:auto;padding-top:10px;'>", unsafe_allow_html=True)
+    theme_icon = "☀️  Light Mode" if st.session_state.theme == "dark" else "🌙  Dark Mode"
+    if st.button(theme_icon, key="theme_toggle_sb", use_container_width=True,
+                 help="Toggle Light/Dark theme"):
+        st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
 # ═══════════════════════════ LAYOUT SETUP ══════════════════════════════════
-nav        = st.session_state.active_nav
-show_chat  = st.session_state.get("show_chat", True)
+nav       = st.session_state.active_nav
+show_chat = st.session_state.show_chat   # always read from session state (default False)
 
-if "show_chat" not in st.session_state:
-    st.session_state.show_chat = True
-
-if show_chat:
-    main_col, chat_col = st.columns([3.2, 1.3])
-else:
-    main_col  = st.container()
-    chat_col  = None
+# Always use full-width main container; chat is a FAB overlay
+main_col = st.container()
 
 # ═══════════════════════════ MAIN AREA ═════════════════════════════════════
 with main_col:
     now = datetime.now().strftime("%b %d, %Y at %I:%M %p")
 
-    # ── Greeting row ───────────────────────────────────────────────────────
-    g1, g2 = st.columns([4, 1])
-    with g1:
-        st.markdown(f"""
-        <div class="greeting-row">
-          <div>
-            <div class="greeting-title">Hello, Architect 👋</div>
-            <div class="greeting-sub">AI-powered review of your Azure environment</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:20px;cursor:pointer;opacity:.7;">🔔</span>
-            <div style="width:34px;height:34px;border-radius:50%;
-              background:linear-gradient(135deg,#0078d4,#6f42c1);
-              display:flex;align-items:center;justify-content:center;
-              color:white;font-weight:700;font-size:13px;">A</div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with g2:
-        if not show_chat:
-            if st.button("💬 Open Chat", use_container_width=True, key="open_chat"):
-                st.session_state.show_chat = True
-                st.rerun()
-        if st.button("＋ New Review", use_container_width=True, key="new_review_btn"):
-            st.session_state.review_result = None
-            st.rerun()
+    # ── Greeting row — pure HTML, no Streamlit buttons ────────────────────
+    st.markdown(f"""
+    <div class="greeting-row">
+      <div>
+        <div class="greeting-title">Hello, Architect 👋</div>
+        <div class="greeting-sub">AI-powered review of your Azure environment</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:20px;cursor:pointer;opacity:.7;">🔔</span>
+        <div style="width:34px;height:34px;border-radius:50%;
+          background:linear-gradient(135deg,#0078d4,#6f42c1);
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-weight:700;font-size:13px;">A</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # ═══════════ NAV ROUTING ═══════════════════════════════════════════════
 
@@ -981,98 +1090,105 @@ with main_col:
                 st.success("✅ Settings saved and review completed!")
                 st.rerun()
 
-# ══════════════════════════ CHAT PANEL ════════════════════════════════════
-if show_chat and chat_col is not None:
-    with chat_col:
-        waf_pillar_data = WAF_PILLARS.get(st.session_state.waf_focus, WAF_PILLARS["security"])
+# ══════════════════════════ FLOATING CHAT FAB ══════════════════════════════
+# Form-based FAB — GET form submits to /?chat=toggle, triggers Python handler at top of file
+fab_icon = "✕" if show_chat else "💬"
+st.markdown(f"""
+<div class="chat-fab-wrap">
+  <form method="get" action="/" target="_self">
+    <input type="hidden" name="chat" value="toggle">
+    <button type="submit" title="Toggle Architecture Copilot">{fab_icon}</button>
+  </form>
+</div>
+""", unsafe_allow_html=True)
 
-        # Header with real close button
-        hdr_left, hdr_right = st.columns([5, 1])
-        with hdr_left:
-            st.markdown("""
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <span style="font-size:20px;">🤖</span>
-              <span class="chat-hdr-title">Architecture Copilot</span>
-            </div>
-            """, unsafe_allow_html=True)
-        with hdr_right:
-            if st.button("✕", key="close_chat", help="Close chat panel"):
-                st.session_state.show_chat = False
-                st.rerun()
 
-        st.markdown("""
-        <div class="chat-bubble">
-          Hi Architect! I\'ve completed the review. Ask me anything about your Azure environment.
-        </div>
-        <div class="chat-prompt-hdr">What would you like to do next?</div>
-        """, unsafe_allow_html=True)
+# Chat overlay panel (shown when show_chat=True)
+if show_chat:
+    waf_pillar_data = WAF_PILLARS.get(st.session_state.waf_focus, WAF_PILLARS["security"])
+    query = st.session_state.get("chat_query", "")
 
-        quick_actions = [
-            ("⚠️","Show me the top risks"),
-            ("💡","Give me remediation plan"),
-            ("🏛️","Map to CAF framework"),
-            ("📊","Focus on Well-Architected pillars"),
-        ]
-        for icon, label in quick_actions:
-            if st.button(f"{icon}  {label}", key=f"qa_{label}", use_container_width=True):
-                st.session_state.chat_query = label
+    # Build chat content HTML
+    chat_body_html = ""
+    if "top risks" in query.lower() and top5:
+        items = "".join(
+            f'<div style="font-size:12px;padding:5px 0;border-bottom:1px solid #2d3f4e;">'
+            f'<span style="background:#3d1515;color:#ff6b6b;padding:1px 7px;border-radius:3px;font-size:10px;font-weight:700;">{r["severity"]}</span>'
+            f'&nbsp;{r["title"]}</div>'
+            for r in top5[:3]
+        )
+        chat_body_html = f"<div style='padding:8px 0;'><b style='font-size:12px;'>🚨 Top Critical Risks:</b>{items}</div>"
+    elif "remediation" in query.lower():
+        items = "".join(
+            f"<div style='font-size:12px;padding:4px 0;'>{i}. <b>{r['title']}</b><br>"
+            f"<span style='color:#8b9dc3;'>{r['remediation'][:80]}...</span></div>"
+            for i, r in enumerate(top5[:4], 1)
+        )
+        chat_body_html = f"<div style='padding:8px 0;'><b style='font-size:12px;'>🛠️ Remediation Plan:</b>{items}</div>"
+    elif "caf" in query.lower():
+        chat_body_html = """<div style='font-size:12px;padding:8px 0;'>
+          <b>🏛️ CAF Alignment:</b><br><br>
+          Your environment maps to <b>Enterprise Scale Landing Zone</b>.
+          Key areas: Management Groups, Policy-driven governance, Hub-Spoke networking.<br><br>
+          <a href='https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/' 
+             target='_blank' style='color:#58a6ff;'>📖 CAF Enterprise Scale →</a>
+        </div>"""
+    elif "well-architected" in query.lower():
+        pillar_html = "".join(
+            f"<div style='font-size:11px;padding:2px 0;'>{pd['icon']} <b>{pd['name']}</b></div>"
+            for pd in WAF_PILLARS.values()
+        )
+        chat_body_html = f"<div style='padding:8px 0;'><b style='font-size:12px;'>🏛️ WAF Pillars:</b>{pillar_html}</div>"
+    else:
+        chat_body_html = """
+        <div style='background:#1a2235;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;border:1px solid #2d3f4e;'>
+          Hi Architect! I've completed the review. Ask me anything about your Azure environment.
+        </div>"""
 
-        st.markdown("<hr style='margin:8px 0;border-color:var(--border);'>", unsafe_allow_html=True)
+    waf_btns = "".join(
+        f'<a href="?chat=toggle" style="text-decoration:none;font-size:18px;padding:4px 6px;border-radius:6px;background:#1a2235;border:1px solid #2d3f4e;">{icon}</a>'
+        for _, icon in [("reliability","🛡️"),("security","🔐"),("cost","💰"),("operational_excellence","⚙️"),("performance","⚡")]
+    )
 
-        query = st.session_state.chat_query
-        if "top risks" in query.lower():
-            st.markdown("**🚨 Top Critical Risks:**")
-            for r in top5[:3]:
-                sev = r["severity"]
-                st.markdown(
-                    f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">'
-                    f'<span class="sev-badge sev-{sev}" style="padding:1px 6px;font-size:10px;">{sev}</span>'
-                    f'&nbsp;{r["title"]}</div>',
-                    unsafe_allow_html=True)
-        elif "remediation" in query.lower():
-            st.markdown("**🛠️ Prioritized Remediation:**")
-            for i, r in enumerate(top5, 1):
-                st.markdown(
-                    f"<div style='font-size:12px;padding:3px 0;'>{i}. <b>{r['title']}</b><br>"
-                    f"<span style='color:var(--text-secondary);'>{r['remediation'][:80]}...</span></div>",
-                    unsafe_allow_html=True)
-        elif "caf" in query.lower():
-            st.markdown("**🏛️ CAF Alignment:**")
-            st.markdown(
-                "<div style='font-size:12px;'>Your environment maps to <b>Enterprise Scale Landing Zone</b>. "
-                "Key areas: Management Groups, Policy-driven governance, Hub-Spoke networking.</div>",
-                unsafe_allow_html=True)
-            st.markdown("[📖 CAF Enterprise Scale →](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/)")
-        elif "well-architected" in query.lower():
-            st.markdown("**🏛️ WAF Pillar Summary:**")
-            for pk, pd in WAF_PILLARS.items():
-                st.markdown(
-                    f"<div style='font-size:11px;padding:3px 0;'>{pd['icon']} <b>{pd['name']}</b></div>",
-                    unsafe_allow_html=True)
-
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-        chat_input = st.chat_input("Ask me anything...", key="main_chat")
-        if chat_input:
-            st.session_state.chat_query = chat_input
-            st.rerun()
-
-        st.markdown(f"""
-        <div class="waf-section">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="waf-section-title">Well-Architected Pillars</span>
-            <span style="font-size:12px;color:var(--accent-blue);">Change</span>
+    st.markdown(f"""
+    <div class="chat-overlay">
+      <div class="chat-overlay-hdr">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:22px;">🤖</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#fff;">Architecture Copilot</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.7);">Powered by Foundry IQ</div>
           </div>
-          <div class="waf-focus-text">Current Focus: <b>{waf_pillar_data['name']}</b></div>
         </div>
-        """, unsafe_allow_html=True)
+        <a href="?chat=toggle" style="text-decoration:none;font-size:18px;color:white;opacity:.8;">✕</a>
+      </div>
+      <div class="chat-overlay-body">
+        {chat_body_html}
+        <div style="margin-top:12px;font-size:12px;font-weight:600;color:#8b9dc3;margin-bottom:6px;">QUICK ACTIONS</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <a href="?qa=risks"       style="text-decoration:none;background:#1a2235;border:1px solid #2d3f4e;border-radius:8px;padding:8px 12px;font-size:12px;color:#e6edf3;display:flex;align-items:center;gap:8px;">⚠️ Show me the top risks</a>
+          <a href="?qa=remediation" style="text-decoration:none;background:#1a2235;border:1px solid #2d3f4e;border-radius:8px;padding:8px 12px;font-size:12px;color:#e6edf3;display:flex;align-items:center;gap:8px;">💡 Give me remediation plan</a>
+          <a href="?qa=caf"         style="text-decoration:none;background:#1a2235;border:1px solid #2d3f4e;border-radius:8px;padding:8px 12px;font-size:12px;color:#e6edf3;display:flex;align-items:center;gap:8px;">🏛️ Map to CAF framework</a>
+          <a href="?qa=waf"         style="text-decoration:none;background:#1a2235;border:1px solid #2d3f4e;border-radius:8px;padding:8px 12px;font-size:12px;color:#e6edf3;display:flex;align-items:center;gap:8px;">📊 Well-Architected pillars</a>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:6px;align-items:center;font-size:11px;color:#8b9dc3;">
+          WAF Focus: {waf_btns}
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        waf_cols = st.columns(5)
-        waf_items = [
-            ("reliability","🛡️"),("security","🔐"),
-            ("cost","💰"),("operational_excellence","⚙️"),("performance","⚡"),
-        ]
-        for col, (pk, icon) in zip(waf_cols, waf_items):
-            with col:
-                if st.button(icon, key=f"waf_{pk}", help=WAF_PILLARS[pk]["name"]):
-                    st.session_state.waf_focus = pk
-                    st.rerun()
+    # Handle chat input via Streamlit widget (below overlay)
+    chat_input = st.chat_input("Ask me anything...", key="main_chat")
+    if chat_input:
+        st.session_state.chat_query = chat_input
+        st.rerun()
+
+# Handle quick action query params
+if "qa" in st.query_params:
+    qa_map = {"risks": "top risks", "remediation": "remediation plan", "caf": "caf framework", "waf": "well-architected pillars"}
+    qa_key = st.query_params.get("qa", "")
+    st.session_state.chat_query = qa_map.get(qa_key, qa_key)
+    st.session_state.show_chat = True
+    st.query_params.clear()
+    st.rerun()
