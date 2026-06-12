@@ -1,0 +1,163 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Azure Architecture Review Copilot — deploys Azure OpenAI and supporting resources",
+    "author": "Yash Upadhyay — Agents League Hackathon 2026"
+  },
+  "parameters": {
+    "projectName": {
+      "type": "string",
+      "defaultValue": "arcreview",
+      "maxLength": 12,
+      "metadata": { "description": "Short project prefix used in all resource names (max 12 chars, lowercase)." }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus",
+      "allowedValues": ["eastus", "eastus2", "westeurope", "swedencentral", "australiaeast"],
+      "metadata": { "description": "Region to deploy all resources. Azure OpenAI is region-limited." }
+    },
+    "openAiSkuName": {
+      "type": "string",
+      "defaultValue": "S0",
+      "metadata": { "description": "Azure OpenAI pricing tier." }
+    },
+    "gpt4oModelCapacity": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": { "description": "GPT-4o deployment capacity (tokens per minute in thousands)." }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "project": "azure-architecture-review-copilot",
+        "hackathon": "agents-league-2026",
+        "track": "reasoning-agents",
+        "iq-layer": "foundry-iq"
+      }
+    }
+  },
+  "variables": {
+    "openAiName": "[concat(parameters('projectName'), '-openai-', uniqueString(resourceGroup().id))]",
+    "keyVaultName": "[concat(parameters('projectName'), '-kv-', uniqueString(resourceGroup().id))]",
+    "appServicePlanName": "[concat(parameters('projectName'), '-plan')]",
+    "webAppName": "[concat(parameters('projectName'), '-app-', uniqueString(resourceGroup().id))]",
+    "logAnalyticsName": "[concat(parameters('projectName'), '-logs')]",
+    "gpt4oDeploymentName": "gpt-4o"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-04-01-preview",
+      "name": "[variables('openAiName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "OpenAI",
+      "sku": { "name": "[parameters('openAiSkuName')]" },
+      "properties": {
+        "customSubDomainName": "[variables('openAiName')]",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-04-01-preview",
+      "name": "[concat(variables('openAiName'), '/', variables('gpt4oDeploymentName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAiName'))]"
+      ],
+      "sku": {
+        "name": "Standard",
+        "capacity": "[parameters('gpt4oModelCapacity')]"
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4o",
+          "version": "2024-08-06"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": { "name": "PerGB2018" },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": { "family": "A", "name": "standard" },
+        "tenantId": "[subscription().tenantId]",
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 7,
+        "accessPolicies": []
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": { "name": "B2", "tier": "Basic" },
+      "kind": "linux",
+      "properties": { "reserved": true }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('webAppName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "app,linux",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAiName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "PYTHON|3.11",
+          "appCommandLine": "streamlit run ui/app.py --server.port 8000 --server.headless true",
+          "appSettings": [
+            { "name": "DEMO_MODE", "value": "false" },
+            { "name": "AZURE_OPENAI_ENDPOINT", "value": "[concat('https://', variables('openAiName'), '.openai.azure.com/')]" },
+            { "name": "AZURE_OPENAI_DEPLOYMENT", "value": "[variables('gpt4oDeploymentName')]" },
+            { "name": "LOG_LEVEL", "value": "INFO" },
+            { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true" },
+            { "name": "WEBSITES_PORT", "value": "8000" }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "openAiEndpoint": {
+      "type": "string",
+      "value": "[concat('https://', variables('openAiName'), '.openai.azure.com/')]"
+    },
+    "openAiResourceName": {
+      "type": "string",
+      "value": "[variables('openAiName')]"
+    },
+    "webAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', variables('webAppName'), '.azurewebsites.net')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[variables('keyVaultName')]"
+    }
+  }
+}
