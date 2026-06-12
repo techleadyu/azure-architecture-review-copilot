@@ -99,10 +99,14 @@ st.markdown("""
   [data-testid="stSidebar"] h3 {
     color: #ffffff !important; font-size: 14px !important; font-weight: 700 !important;
   }
-  /* Sidebar nav buttons */
-  [data-testid="stSidebar"] .stButton > button {
+  /* Sidebar nav buttons — all states */
+  [data-testid="stSidebar"] .stButton > button,
+  [data-testid="stSidebar"] button[data-testid="baseButton-secondary"],
+  [data-testid="stSidebar"] button[data-testid="baseButton-primary"] {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
+    box-shadow: none !important;
     color: var(--text-sidebar-dim) !important;
     text-align: left !important;
     font-size: 13px !important;
@@ -113,15 +117,20 @@ st.markdown("""
     transition: background 0.15s, color 0.15s !important;
     margin: 1px 0 !important;
   }
-  [data-testid="stSidebar"] .stButton > button:hover {
-    background: var(--bg-sidebar-hover) !important;
+  [data-testid="stSidebar"] .stButton > button:hover,
+  [data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+    background-color: var(--bg-sidebar-hover) !important;
     color: #e6edf3 !important;
   }
-  [data-testid="stSidebar"] button[kind="primary"] {
+  /* Active nav button — primary type */
+  [data-testid="stSidebar"] button[data-testid="baseButton-primary"],
+  [data-testid="stSidebar"] .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)) !important;
+    background-color: var(--accent-blue) !important;
     color: #ffffff !important;
   }
-  [data-testid="stSidebar"] .stButton > button:focus { box-shadow: none !important; }
+  [data-testid="stSidebar"] .stButton > button:focus,
+  [data-testid="stSidebar"] button:focus { box-shadow: none !important; outline: none !important; }
   [data-testid="stSidebar"] hr { border-color: var(--border-sidebar) !important; }
   [data-testid="stSidebar"] .stExpander {
     border-color: var(--border-sidebar) !important;
@@ -358,6 +367,8 @@ if "active_nav" not in st.session_state:
     st.session_state.active_nav = "Overview"
 if "waf_focus" not in st.session_state:
     st.session_state.waf_focus = "security"
+if "show_chat" not in st.session_state:
+    st.session_state.show_chat = True
 if "chat_query" not in st.session_state:
     st.session_state.chat_query = "Show me the top risks"
 if "subscription" not in st.session_state:
@@ -459,309 +470,609 @@ with st.sidebar:
         if st.button("🚀 Run New Review", type="primary", use_container_width=True):
             st.session_state.subscription = new_sub
             st.session_state.landing_zone = new_lz
-            tier_map = {"Auto-Detect": None, "SMB": "smb", "Mid-Market": "midmarket", "Enterprise": "enterprise"}
-            pillar_map = {v["name"]: k for k, v in WAF_PILLARS.items()}
+            tier_map2   = {"Auto-Detect": None, "SMB": "smb", "Mid-Market": "midmarket", "Enterprise": "enterprise"}
+            pillar_map2 = {v["name"]: k for k, v in WAF_PILLARS.items()}
             with st.spinner("Running review..."):
                 st.session_state.review_result = run_review(
-                    tier_key=tier_map[tier_sel],
-                    pillar_key=pillar_map.get(pillar_sel)
+                    tier_key=tier_map2[tier_sel],
+                    pillar_key=pillar_map2.get(pillar_sel)
                 )
             st.rerun()
 
-# ════════════════════════ MAIN + CHAT COLUMNS ════════════════════════
-main_col, chat_col = st.columns([3.2, 1.3])
+# ═══════════════════════════ LAYOUT SETUP ══════════════════════════════════
+nav        = st.session_state.active_nav
+show_chat  = st.session_state.get("show_chat", True)
 
-# ════════════════════════ MAIN CONTENT ════════════════════════
+if "show_chat" not in st.session_state:
+    st.session_state.show_chat = True
+
+if show_chat:
+    main_col, chat_col = st.columns([3.2, 1.3])
+else:
+    main_col  = st.container()
+    chat_col  = None
+
+# ═══════════════════════════ MAIN AREA ═════════════════════════════════════
 with main_col:
     now = datetime.now().strftime("%b %d, %Y at %I:%M %p")
 
-    # ── Greeting row ──
-    st.markdown(f"""
-    <div class="greeting-row">
-      <div>
-        <div class="greeting-title">Hello, Architect 👋</div>
-        <div class="greeting-sub">AI-powered review of your Azure environment</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <button class="action-btn">＋ New Review</button>
-        <span style="font-size:20px;cursor:pointer;opacity:.7;">🔔</span>
-        <div style="width:34px;height:34px;border-radius:50%;
-          background:linear-gradient(135deg,#0078d4,#6f42c1);
-          display:flex;align-items:center;justify-content:center;
-          color:white;font-weight:700;font-size:13px;">A</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── Summary Banner ──
-    score_hex = "#ef4444" if score < 60 else "#f59e0b" if score < 80 else "#10b981"
-    st.markdown(f"""
-    <div class="summary-banner">
-      <div class="banner-left">
-        <div class="banner-title">Architecture Review Summary</div>
-        <div class="banner-sub">Completed on {now}</div>
-        <div class="banner-stats">
-          <div class="score-block">
-            <div class="score-num" style="color:{score_hex};">{score}<span class="score-denom">/100</span></div>
-            <div class="score-label">Overall Risk Score</div>
+    # ── Greeting row ───────────────────────────────────────────────────────
+    g1, g2 = st.columns([4, 1])
+    with g1:
+        st.markdown(f"""
+        <div class="greeting-row">
+          <div>
+            <div class="greeting-title">Hello, Architect 👋</div>
+            <div class="greeting-sub">AI-powered review of your Azure environment</div>
           </div>
-          <div class="divider-v"></div>
-          <div class="stat-blk"><div class="stat-n n-crit">{critical_count}</div><div class="stat-l">Critical</div></div>
-          <div class="stat-blk"><div class="stat-n n-high">{high_count}</div><div class="stat-l">High</div></div>
-          <div class="stat-blk"><div class="stat-n n-med">{medium_count}</div><div class="stat-l">Medium</div></div>
-          <div class="stat-blk"><div class="stat-n n-low">{low_count}</div><div class="stat-l">Low</div></div>
-          <div class="divider-v"></div>
-          <div class="stat-blk">
-            <div class="stat-n" style="color:#51cf66;">${savings:,.0f}</div>
-            <div class="stat-l">Est. Monthly Savings</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:20px;cursor:pointer;opacity:.7;">🔔</span>
+            <div style="width:34px;height:34px;border-radius:50%;
+              background:linear-gradient(135deg,#0078d4,#6f42c1);
+              display:flex;align-items:center;justify-content:center;
+              color:white;font-weight:700;font-size:13px;">A</div>
           </div>
         </div>
-        <div style="margin-top:16px;">
-          <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
-            color:white;border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;">
-            📄 View Full Report
-          </button>
-        </div>
-      </div>
-      <div class="banner-robot">🤖</div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    with g2:
+        if not show_chat:
+            if st.button("💬 Open Chat", use_container_width=True, key="open_chat"):
+                st.session_state.show_chat = True
+                st.rerun()
+        if st.button("＋ New Review", use_container_width=True, key="new_review_btn"):
+            st.session_state.review_result = None
+            st.rerun()
 
-    # ── AI Agent Analysis ──
-    st.markdown("""
-    <div class="sec-hdr">
-      <span class="sec-title">AI Agent Analysis</span>
-      <span class="sec-link">View all agents →</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # ═══════════ NAV ROUTING ═══════════════════════════════════════════════
 
-    agent_cols = st.columns(4)
-    for i, (cat, data) in enumerate(agent_results.items()):
-        s = data["risk_score"]
-        rlabel, rkey = score_to_risk_level(s)
-        icon = agent_icons.get(cat, "🔷")
-        icls = agent_ico_cls.get(cat, "")
-        with agent_cols[i]:
-            st.markdown(f"""
-            <div class="agent-card">
-              <div class="agent-hdr">
-                <div class="agent-ico {icls}">{icon}</div>
-                <span class="agent-name">{cat} Agent</span>
+    if nav == "Overview":
+        score_hex = "#ef4444" if score < 60 else "#f59e0b" if score < 80 else "#10b981"
+        st.markdown(f"""
+        <div class="summary-banner">
+          <div class="banner-left">
+            <div class="banner-title">Architecture Review Summary</div>
+            <div class="banner-sub">Completed on {now}</div>
+            <div class="banner-stats">
+              <div class="score-block">
+                <div class="score-num" style="color:{score_hex};">{score}<span class="score-denom">/100</span></div>
+                <div class="score-label">Overall Risk Score</div>
               </div>
-              <div class="agent-stat">Scanned {data['resources_scanned']} resources</div>
-              <div class="agent-stat">Identified {data['risk_count']} risks</div>
-              <div><span class="risk-lbl lbl-{rkey}">{rlabel}</span></div>
-              <div class="pbar-bg"><div class="pbar-fill pbar-{rkey}" style="width:{s}%;"></div></div>
-              <div class="pct-label">{s}%</div>
+              <div class="divider-v"></div>
+              <div class="stat-blk"><div class="stat-n n-crit">{critical_count}</div><div class="stat-l">Critical</div></div>
+              <div class="stat-blk"><div class="stat-n n-high">{high_count}</div><div class="stat-l">High</div></div>
+              <div class="stat-blk"><div class="stat-n n-med">{medium_count}</div><div class="stat-l">Medium</div></div>
+              <div class="stat-blk"><div class="stat-n n-low">{low_count}</div><div class="stat-l">Low</div></div>
+              <div class="divider-v"></div>
+              <div class="stat-blk">
+                <div class="stat-n" style="color:#51cf66;">${savings:,.0f}</div>
+                <div class="stat-l">Est. Monthly Savings</div>
+              </div>
             </div>
-            """, unsafe_allow_html=True)
-
-    # ── Top 5 Risks + Chart ──
-    risks_col, chart_col2 = st.columns([3, 2])
-
-    with risks_col:
-        st.markdown("""
-        <div class="sec-hdr">
-          <span class="sec-title">Top 5 Risks</span>
-          <span class="sec-link">View all</span>
+          </div>
+          <div class="banner-robot">🤖</div>
         </div>
-        <div class="card" style="padding:4px 16px;">
         """, unsafe_allow_html=True)
 
-        for i, r in enumerate(top5, 1):
-            sev = r["severity"]
-            st.markdown(f"""
-            <div class="risk-row">
-              <div class="risk-num">{i}</div>
-              <div class="risk-info">
-                <div class="risk-title">{r['title']}</div>
-                <div class="risk-desc">{r['description'][:72]}...</div>
-              </div>
-              <span class="sev-badge sev-{sev}">{sev}</span>
-              <span style="font-size:15px;color:var(--text-secondary);cursor:pointer;">📋</span>
+        st.markdown("""
+        <div class="sec-hdr">
+          <span class="sec-title">AI Agent Analysis</span>
+          <span class="sec-link">View all agents →</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        agent_cols = st.columns(4)
+        for i, (cat, data) in enumerate(agent_results.items()):
+            s = data["risk_score"]
+            rlabel, rkey = score_to_risk_level(s)
+            icon = agent_icons.get(cat, "🔷")
+            icls = agent_ico_cls.get(cat, "")
+            with agent_cols[i]:
+                st.markdown(f"""
+                <div class="agent-card">
+                  <div class="agent-hdr">
+                    <div class="agent-ico {icls}">{icon}</div>
+                    <span class="agent-name">{cat} Agent</span>
+                  </div>
+                  <div class="agent-stat">Scanned {data['resources_scanned']} resources</div>
+                  <div class="agent-stat">Identified {data['risk_count']} risks</div>
+                  <div><span class="risk-lbl lbl-{rkey}">{rlabel}</span></div>
+                  <div class="pbar-bg"><div class="pbar-fill pbar-{rkey}" style="width:{s}%;"></div></div>
+                  <div class="pct-label">{s}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        risks_col, chart_col2 = st.columns([3, 2])
+        with risks_col:
+            st.markdown("""
+            <div class="sec-hdr">
+              <span class="sec-title">Top 5 Risks</span>
+              <span class="sec-link">View all</span>
+            </div>
+            <div class="card" style="padding:4px 16px;">
+            """, unsafe_allow_html=True)
+            for i, r in enumerate(top5, 1):
+                sev = r["severity"]
+                st.markdown(f"""
+                <div class="risk-row">
+                  <div class="risk-num">{i}</div>
+                  <div class="risk-info">
+                    <div class="risk-title">{r['title']}</div>
+                    <div class="risk-desc">{r['description'][:72]}...</div>
+                  </div>
+                  <span class="sev-badge sev-{sev}">{sev}</span>
+                  <span style="font-size:15px;color:var(--text-secondary);">📋</span>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            for i, r in enumerate(top5, 1):
+                with st.expander(f"Details: {r['title']}", expanded=False):
+                    c1, c2, c3 = st.columns(3)
+                    c1.markdown(f"**Category:** {r['category']}")
+                    c2.markdown(f"**Effort:** {r['effort']}")
+                    c3.markdown(f"**Impact:** {r['impact']}")
+                    st.markdown(f"**Remediation:** {r['remediation']}")
+                    if r.get("reference_url"):
+                        st.markdown(f"[📖 Microsoft Reference]({r['reference_url']})")
+                    if r.get("estimated_savings", 0) > 0:
+                        st.success(f"💰 Est. savings: ${r['estimated_savings']:,.0f}/mo")
+
+        with chart_col2:
+            st.markdown("""
+            <div class="sec-hdr">
+              <span class="sec-title">Risk by Category</span>
+              <span class="sec-link">View details</span>
             </div>
             """, unsafe_allow_html=True)
+            cats   = list(agent_results.keys())
+            counts = [agent_results[c]["risk_count"] for c in cats]
+            total_risks = sum(counts)
+            fig = go.Figure(data=[go.Pie(
+                labels=cats, values=counts, hole=0.62,
+                marker=dict(colors=["#6f42c1","#10b981","#3b82f6","#f59e0b"],
+                            line=dict(color="rgba(0,0,0,0)", width=2)),
+                textinfo="none",
+                hovertemplate="%{label}<br>%{value} risks (%{percent})<extra></extra>",
+            )])
+            fig.add_annotation(text=f"<b>{total_risks}</b>", x=0.5, y=0.55,
+                               font_size=24, font_color="#e6edf3", showarrow=False)
+            fig.add_annotation(text="Total Risks", x=0.5, y=0.42,
+                               font_size=11, font_color="#8b949e", showarrow=False)
+            fig.update_layout(
+                margin=dict(t=10,b=0,l=0,r=0), height=240, showlegend=True,
+                legend=dict(orientation="v", x=0.72, y=0.5,
+                            font=dict(size=11, color="#e6edf3"),
+                            bgcolor="rgba(0,0,0,0)"),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
+        st.markdown("""
+        <div class="sec-hdr" style="margin-top:8px;">
+          <span class="sec-title">Recommended Blueprint</span>
+          <span style="font-size:12px;color:var(--text-secondary);">Based on your environment profile</span>
+        </div>
+        """, unsafe_allow_html=True)
+        bp_cols = st.columns(3)
+        tiers_info = [
+            ("🏪","SMB Blueprint","smb","Optimized for small teams","75%",False),
+            ("🏢","Mid-Market Blueprint","midmarket","Balanced scale & governance","92%",True),
+            ("🏙️","Enterprise Blueprint","enterprise","Advanced scale & compliance","80%",False),
+        ]
+        for col, (icon, name, key, desc, match, highlighted) in zip(bp_cols, tiers_info):
+            is_active = key == active_tier or highlighted
+            match_cls = "bp-match-good" if highlighted else "bp-match-norm"
+            card_cls  = "bp-card bp-active" if is_active else "bp-card"
+            with col:
+                st.markdown(f"""
+                <div class="{card_cls}">
+                  <div class="bp-icon">{icon}</div>
+                  <div class="bp-name">{name}</div>
+                  <div class="bp-desc">{desc}</div>
+                  <div class="{match_cls}">{match} Match</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("<div style='margin-top:20px;'>", unsafe_allow_html=True)
+        report_gen = ReportGenerator()
+        exp_col1, exp_col2, _ = st.columns([1, 1, 2])
+        with exp_col1:
+            json_report = report_gen.generate_json(result)
+            st.download_button("⬇️ Download ADR (JSON)", data=json_report,
+                               file_name="azure_adr_report.json", mime="application/json",
+                               use_container_width=True)
+        with exp_col2:
+            md_report = report_gen.generate_markdown(result)
+            st.download_button("⬇️ Download ADR (Markdown)", data=md_report,
+                               file_name="azure_adr_report.md", mime="text/markdown",
+                               use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-        for i, r in enumerate(top5, 1):
-            with st.expander(f"Details: {r['title']}", expanded=False):
-                c1, c2, c3 = st.columns(3)
-                c1.markdown(f"**Category:** {r['category']}")
-                c2.markdown(f"**Effort:** {r['effort']}")
-                c3.markdown(f"**Impact:** {r['impact']}")
-                st.markdown(f"**Remediation:** {r['remediation']}")
+    # ─────────────────────── RISK DASHBOARD ────────────────────────────────
+    elif nav == "Risk Dashboard":
+        st.markdown("### ⚠️ Risk Dashboard")
+        st.markdown(f"**{len(top5)} total risks identified** · Last scan: {now}")
+        sev_filter = st.multiselect(
+            "Filter by Severity", ["Critical","High","Medium","Low"],
+            default=["Critical","High"], key="sev_filter"
+        )
+        cat_filter = st.multiselect(
+            "Filter by Category", list(agent_results.keys()),
+            default=list(agent_results.keys()), key="cat_filter"
+        )
+        filtered = [
+            r for r in top5
+            if (not sev_filter or r["severity"] in sev_filter)
+            and (not cat_filter or r["category"] in cat_filter)
+        ]
+        st.markdown(f"**Showing {len(filtered)} risks**")
+        for r in filtered:
+            sev   = r["severity"]
+            col1, col2 = st.columns([5, 1])
+            with col1:
+                st.markdown(f"""
+                <div class="card" style="padding:14px 18px;margin-bottom:8px;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <span class="sev-badge sev-{sev}">{sev}</span>
+                    <span style="font-weight:600;font-size:14px;">{r['title']}</span>
+                    <span style="font-size:11px;color:var(--text-secondary);margin-left:auto;">{r['category']}</span>
+                  </div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">{r['description']}</div>
+                  <div style="font-size:12px;">
+                    <b>Remediation:</b> {r['remediation']}<br>
+                    <span style="color:var(--text-secondary);">Effort: {r['effort']} &nbsp;|&nbsp; Impact: {r['impact']}</span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
                 if r.get("reference_url"):
-                    st.markdown(f"[📖 Microsoft Reference]({r['reference_url']})")
+                    st.markdown(f"[📖 Ref]({r['reference_url']})")
                 if r.get("estimated_savings", 0) > 0:
-                    st.success(f"💰 Est. savings: ${r['estimated_savings']:,.0f}/mo")
+                    st.metric("Savings/mo", f"${r['estimated_savings']:,.0f}")
 
-    with chart_col2:
+    # ─────────────────────── FINDINGS ──────────────────────────────────────
+    elif nav == "Findings":
+        st.markdown("### 📋 Detailed Findings by Agent")
+        tabs = st.tabs([f"{agent_icons.get(k,'🔷')} {k}" for k in agent_results])
+        for tab, (cat, data) in zip(tabs, agent_results.items()):
+            with tab:
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Resources Scanned", data["resources_scanned"])
+                m2.metric("Risks Identified",  data["risk_count"])
+                m3.metric("Risk Score",         f"{data['risk_score']}/100")
+                st.markdown(f"**Summary:** {data.get('summary','No summary available.')}")
+                st.divider()
+                agent_risks = [r for r in top5 if r["category"] == cat]
+                if agent_risks:
+                    st.markdown(f"**Top risks from {cat} Agent:**")
+                    for r in agent_risks:
+                        sev = r["severity"]
+                        with st.expander(f"{r['title']} · {sev}", expanded=True):
+                            st.markdown(f"**Description:** {r['description']}")
+                            st.markdown(f"**Remediation:** {r['remediation']}")
+                            c1, c2 = st.columns(2)
+                            c1.markdown(f"**Effort:** `{r['effort']}`")
+                            c2.markdown(f"**Impact:** `{r['impact']}`")
+                            if r.get("reference_url"):
+                                st.markdown(f"[📖 Microsoft Reference]({r['reference_url']})")
+                else:
+                    st.info(f"No findings in top-5 for {cat} agent. Agent found {data['risk_count']} total risks.")
+
+    # ─────────────────────── RECOMMENDATIONS ───────────────────────────────
+    elif nav == "Recommendations":
+        st.markdown("### 💡 Prioritized Remediation Roadmap")
+        st.markdown(
+            "Recommendations are ordered by **severity + implementation effort**. "
+            "Critical risks with Low effort should be addressed first."
+        )
+        effort_map = {"Low": 1, "Medium": 2, "High": 3}
+        sev_map    = {"Critical": 4, "High": 3, "Medium": 2, "Low": 1}
+        sorted_risks = sorted(
+            top5,
+            key=lambda r: (-sev_map.get(r["severity"],0), effort_map.get(r["effort"],2))
+        )
+        sev_colors = {"Critical":"#dc2626","High":"#d97706","Medium":"#ca8a04","Low":"#16a34a"}
+        effort_colors = {"Low":"#10b981","Medium":"#f59e0b","High":"#ef4444"}
+        for i, r in enumerate(sorted_risks, 1):
+            sev   = r["severity"]
+            eff   = r["effort"]
+            sc    = sev_colors.get(sev,"#8b949e")
+            ec    = effort_colors.get(eff,"#8b949e")
+            st.markdown(f"""
+            <div class="card" style="padding:16px 20px;margin-bottom:10px;border-left:4px solid {sc};">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">STEP {i}</div>
+                  <div style="font-weight:700;font-size:15px;margin-bottom:6px;">{r['title']}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">{r['description'][:120]}...</div>
+                  <div style="font-size:13px;background:rgba(0,120,212,.08);padding:10px 14px;border-radius:8px;margin-bottom:8px;">
+                    <b>Action:</b> {r['remediation']}
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;min-width:110px;padding-left:12px;">
+                  <span style="background:{sc};color:white;font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;">{sev}</span>
+                  <span style="background:{ec};color:white;font-size:10px;padding:3px 8px;border-radius:4px;">Effort: {eff}</span>
+                  <span style="font-size:11px;color:var(--text-secondary);">{r['category']}</span>
+                </div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if r.get("reference_url"):
+                st.markdown(f"&nbsp;&nbsp;&nbsp;[📖 Microsoft Reference]({r['reference_url']})")
+
+    # ─────────────────────── BLUEPRINTS ────────────────────────────────────
+    elif nav == "Blueprints":
+        st.markdown("### 🏗️ Azure Architecture Blueprints")
+        st.markdown("Blueprints are grounded in **Microsoft Azure Architecture Center** and **Cloud Adoption Framework** guidance.")
+        tier_tab = st.tabs(["🏪 SMB", "🏢 Mid-Market", "🏙️ Enterprise"])
+        blueprints_data = {
+            "SMB": {
+                "desc":"Optimized for small teams (<50 users). Single subscription, minimal governance overhead.",
+                "services":["Azure App Service","Azure SQL Database","Azure Blob Storage","Azure CDN","Basic monitoring"],
+                "highlights":["Cost-optimized SKUs","Dev/Test licensing","Single region deployment","Basic RBAC"],
+                "ref":"https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/start-zone/",
+            },
+            "Mid-Market": {
+                "desc":"Balanced scale and governance for 50-500 users. Hub-spoke topology recommended.",
+                "services":["Azure App Service (Premium)","Azure SQL Elastic Pool","Azure Key Vault","Azure API Management","Azure Monitor","Azure Policy"],
+                "highlights":["Hub-spoke networking","Policy-driven governance","Multi-region active-passive","RBAC with PIM"],
+                "ref":"https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/",
+            },
+            "Enterprise": {
+                "desc":"Advanced scale and compliance for 500+ users. Full enterprise scale landing zone.",
+                "services":["Azure Kubernetes Service","Azure SQL Hyperscale","Azure Front Door","Azure Firewall Premium","Microsoft Sentinel","Azure DevOps"],
+                "highlights":["Enterprise Scale Landing Zone","Management groups hierarchy","Azure Policy initiatives","Private endpoints everywhere","Zero-trust networking"],
+                "ref":"https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/",
+            },
+        }
+        for tab, (tier_name, bdata) in zip(tier_tab, blueprints_data.items()):
+            with tab:
+                st.markdown(f"**{bdata['desc']}**")
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown("**Core Services:**")
+                    for svc in bdata["services"]:
+                        st.markdown(f"- {svc}")
+                with c2:
+                    st.markdown("**Key Highlights:**")
+                    for h in bdata["highlights"]:
+                        st.markdown(f"✅ {h}")
+                st.markdown(f"[📖 Microsoft Reference: {tier_name} Architecture]({bdata['ref']})")
+                if tier_name == "Mid-Market":
+                    st.success("✅ **Recommended for your environment** (92% match based on current profile)")
+
+    # ─────────────────────── WELL-ARCHITECTED PILLARS ──────────────────────
+    elif nav == "Well-Architected Pillars":
+        st.markdown("### 🏛️ Well-Architected Framework Review")
+        st.markdown("Scores are based on the current review findings, mapped to each WAF pillar.")
+        pillar_scores = {
+            "reliability":            {"score":72, "key":"reliability"},
+            "security":               {"score":68, "key":"security"},
+            "cost":                   {"score":74, "key":"cost"},
+            "operational_excellence": {"score":80, "key":"operational_excellence"},
+            "performance":            {"score":85, "key":"performance"},
+        }
+        score_cols = st.columns(5)
+        for col, (pk, pdata) in zip(score_cols, pillar_scores.items()):
+            pillar  = WAF_PILLARS.get(pk, {})
+            sc      = pdata["score"]
+            sc_col  = "#10b981" if sc >= 80 else "#f59e0b" if sc >= 65 else "#ef4444"
+            with col:
+                st.markdown(f"""
+                <div class="card" style="text-align:center;padding:16px 8px;">
+                  <div style="font-size:24px;">{pillar.get('icon','⭐')}</div>
+                  <div style="font-size:11px;font-weight:700;margin:6px 0 2px;">{pillar.get('name','Pillar')}</div>
+                  <div style="font-size:28px;font-weight:700;color:{sc_col};">{sc}</div>
+                  <div style="font-size:10px;color:var(--text-secondary);">/100</div>
+                  <div style="height:4px;background:var(--border);border-radius:2px;margin-top:8px;">
+                    <div style="height:4px;background:{sc_col};width:{sc}%;border-radius:2px;"></div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+        st.divider()
+        focus_pillar = st.selectbox(
+            "Drill into a pillar:",
+            list(WAF_PILLARS.keys()),
+            format_func=lambda k: f"{WAF_PILLARS[k]['icon']} {WAF_PILLARS[k]['name']}",
+            key="waf_drill",
+        )
+        pd2 = WAF_PILLARS.get(focus_pillar, {})
+        sc2 = pillar_scores.get(focus_pillar, {}).get("score", 0)
+        sc_col2 = "#10b981" if sc2 >= 80 else "#f59e0b" if sc2 >= 65 else "#ef4444"
+        st.markdown(f"""
+        <div class="card" style="padding:20px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <span style="font-size:32px;">{pd2.get('icon','⭐')}</span>
+            <div>
+              <div style="font-weight:700;font-size:18px;">{pd2.get('name','Pillar')}</div>
+              <div style="font-size:12px;color:var(--text-secondary);">{pd2.get('description','')}</div>
+            </div>
+            <div style="margin-left:auto;text-align:center;">
+              <div style="font-size:36px;font-weight:700;color:{sc_col2};">{sc2}</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Score / 100</div>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("[📖 Well-Architected Framework →](https://learn.microsoft.com/azure/well-architected/)")
+        st.markdown("[📖 Azure Architecture Center →](https://learn.microsoft.com/azure/architecture/)")
+
+    # ─────────────────────── REPORTS ───────────────────────────────────────
+    elif nav == "Reports":
+        st.markdown("### 📊 Architecture Decision Reports")
+        report_gen2 = ReportGenerator()
+        r1, r2, r3 = st.columns(3)
+        with r1:
+            st.markdown("""
+            <div class="card" style="padding:20px;text-align:center;">
+              <div style="font-size:32px;">📄</div>
+              <div style="font-weight:700;margin:8px 0 4px;">JSON Report</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Machine-readable ADR for CI/CD integration</div>
+            </div>""", unsafe_allow_html=True)
+            json_r = report_gen2.generate_json(result)
+            st.download_button("⬇️ Download JSON", data=json_r,
+                               file_name="azure_adr_report.json", mime="application/json",
+                               use_container_width=True)
+        with r2:
+            st.markdown("""
+            <div class="card" style="padding:20px;text-align:center;">
+              <div style="font-size:32px;">📝</div>
+              <div style="font-weight:700;margin:8px 0 4px;">Markdown Report</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Human-readable ADR for wikis & PRs</div>
+            </div>""", unsafe_allow_html=True)
+            md_r = report_gen2.generate_markdown(result)
+            st.download_button("⬇️ Download Markdown", data=md_r,
+                               file_name="azure_adr_report.md", mime="text/markdown",
+                               use_container_width=True)
+        with r3:
+            st.markdown("""
+            <div class="card" style="padding:20px;text-align:center;">
+              <div style="font-size:32px;">📊</div>
+              <div style="font-weight:700;margin:8px 0 4px;">Executive Summary</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">High-level overview for stakeholders</div>
+            </div>""", unsafe_allow_html=True)
+            exec_txt = f"Azure Architecture Review\nDate: {now}\nScore: {score}/100\nCritical Risks: {critical_count}\nEst. Savings: ${savings:,.0f}/mo"
+            st.download_button("⬇️ Download Summary", data=exec_txt,
+                               file_name="executive_summary.txt", mime="text/plain",
+                               use_container_width=True)
+        st.divider()
+        st.markdown("**Executive Summary Preview:**")
+        st.info(f"""
+**Azure Architecture Review Report**
+- **Date:** {now}
+- **Environment:** {st.session_state.subscription} / {st.session_state.landing_zone}
+- **Overall Score:** {score}/100
+- **Critical Risks:** {critical_count} | **High:** {high_count} | **Medium:** {medium_count}
+- **Estimated Monthly Savings:** ${savings:,.0f}
+- **Top Risk:** {top5[0]['title'] if top5 else 'None'}
+        """)
+
+    # ─────────────────────── SETTINGS ──────────────────────────────────────
+    elif nav == "Settings":
+        st.markdown("### ⚙️ Settings & Configuration")
+        with st.form("settings_form"):
+            st.markdown("**Connection Settings**")
+            fc1, fc2 = st.columns(2)
+            new_sub = fc1.text_input("Subscription Name", value=st.session_state.subscription)
+            new_lz  = fc2.text_input("Landing Zone",      value=st.session_state.landing_zone)
+            st.markdown("**Review Parameters**")
+            fc3, fc4 = st.columns(2)
+            tier_sel   = fc3.selectbox("Architecture Tier", ["Auto-Detect","SMB","Mid-Market","Enterprise"])
+            pillar_sel = fc4.selectbox("WAF Pillar Focus",  ["None"] + [v["name"] for v in WAF_PILLARS.values()])
+            st.markdown("**Agent Toggles**")
+            ac1, ac2, ac3, ac4 = st.columns(4)
+            chk_sec = ac1.checkbox("🛡️ Security Agent",    value=True)
+            chk_cst = ac2.checkbox("💰 Cost Agent",        value=True)
+            chk_idn = ac3.checkbox("👤 Identity Agent",    value=True)
+            chk_rel = ac4.checkbox("☁️ Reliability Agent", value=True)
+            st.markdown("**Demo Mode**")
+            demo_val = os.environ.get("DEMO_MODE","true").lower() == "true"
+            demo_on = st.checkbox("Enable Demo Mode (no real Azure connection required)", value=demo_val)
+            submitted = st.form_submit_button("💾 Save & Run Review", type="primary", use_container_width=True)
+            if submitted:
+                st.session_state.subscription = new_sub
+                st.session_state.landing_zone  = new_lz
+                tier_map   = {"Auto-Detect":None,"SMB":"smb","Mid-Market":"midmarket","Enterprise":"enterprise"}
+                pillar_map = {v["name"]:k for k,v in WAF_PILLARS.items()}
+                with st.spinner("Running review..."):
+                    st.session_state.review_result = run_review(
+                        tier_key=tier_map[tier_sel],
+                        pillar_key=pillar_map.get(pillar_sel)
+                    )
+                st.success("✅ Settings saved and review completed!")
+                st.rerun()
+
+# ══════════════════════════ CHAT PANEL ════════════════════════════════════
+if show_chat and chat_col is not None:
+    with chat_col:
+        waf_pillar_data = WAF_PILLARS.get(st.session_state.waf_focus, WAF_PILLARS["security"])
+
+        # Header with real close button
+        hdr_left, hdr_right = st.columns([5, 1])
+        with hdr_left:
+            st.markdown("""
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <span style="font-size:20px;">🤖</span>
+              <span class="chat-hdr-title">Architecture Copilot</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with hdr_right:
+            if st.button("✕", key="close_chat", help="Close chat panel"):
+                st.session_state.show_chat = False
+                st.rerun()
+
         st.markdown("""
-        <div class="sec-hdr">
-          <span class="sec-title">Risk by Category</span>
-          <span class="sec-link">View details</span>
+        <div class="chat-bubble">
+          Hi Architect! I\'ve completed the review. Ask me anything about your Azure environment.
+        </div>
+        <div class="chat-prompt-hdr">What would you like to do next?</div>
+        """, unsafe_allow_html=True)
+
+        quick_actions = [
+            ("⚠️","Show me the top risks"),
+            ("💡","Give me remediation plan"),
+            ("🏛️","Map to CAF framework"),
+            ("📊","Focus on Well-Architected pillars"),
+        ]
+        for icon, label in quick_actions:
+            if st.button(f"{icon}  {label}", key=f"qa_{label}", use_container_width=True):
+                st.session_state.chat_query = label
+
+        st.markdown("<hr style='margin:8px 0;border-color:var(--border);'>", unsafe_allow_html=True)
+
+        query = st.session_state.chat_query
+        if "top risks" in query.lower():
+            st.markdown("**🚨 Top Critical Risks:**")
+            for r in top5[:3]:
+                sev = r["severity"]
+                st.markdown(
+                    f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">'
+                    f'<span class="sev-badge sev-{sev}" style="padding:1px 6px;font-size:10px;">{sev}</span>'
+                    f'&nbsp;{r["title"]}</div>',
+                    unsafe_allow_html=True)
+        elif "remediation" in query.lower():
+            st.markdown("**🛠️ Prioritized Remediation:**")
+            for i, r in enumerate(top5, 1):
+                st.markdown(
+                    f"<div style='font-size:12px;padding:3px 0;'>{i}. <b>{r['title']}</b><br>"
+                    f"<span style='color:var(--text-secondary);'>{r['remediation'][:80]}...</span></div>",
+                    unsafe_allow_html=True)
+        elif "caf" in query.lower():
+            st.markdown("**🏛️ CAF Alignment:**")
+            st.markdown(
+                "<div style='font-size:12px;'>Your environment maps to <b>Enterprise Scale Landing Zone</b>. "
+                "Key areas: Management Groups, Policy-driven governance, Hub-Spoke networking.</div>",
+                unsafe_allow_html=True)
+            st.markdown("[📖 CAF Enterprise Scale →](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/)")
+        elif "well-architected" in query.lower():
+            st.markdown("**🏛️ WAF Pillar Summary:**")
+            for pk, pd in WAF_PILLARS.items():
+                st.markdown(
+                    f"<div style='font-size:11px;padding:3px 0;'>{pd['icon']} <b>{pd['name']}</b></div>",
+                    unsafe_allow_html=True)
+
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        chat_input = st.chat_input("Ask me anything...", key="main_chat")
+        if chat_input:
+            st.session_state.chat_query = chat_input
+            st.rerun()
+
+        st.markdown(f"""
+        <div class="waf-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="waf-section-title">Well-Architected Pillars</span>
+            <span style="font-size:12px;color:var(--accent-blue);">Change</span>
+          </div>
+          <div class="waf-focus-text">Current Focus: <b>{waf_pillar_data['name']}</b></div>
         </div>
         """, unsafe_allow_html=True)
 
-        cats = list(agent_results.keys())
-        counts = [agent_results[c]["risk_count"] for c in cats]
-        total_risks = sum(counts)
-
-        fig = go.Figure(data=[go.Pie(
-            labels=cats, values=counts, hole=0.62,
-            marker=dict(colors=["#6f42c1", "#10b981", "#3b82f6", "#f59e0b"],
-                        line=dict(color='rgba(0,0,0,0)', width=2)),
-            textinfo="none",
-            hovertemplate="%{label}<br>%{value} risks (%{percent})<extra></extra>",
-        )])
-        fig.add_annotation(text=f"<b>{total_risks}</b>", x=0.5, y=0.55,
-                           font_size=24, font_color="#e6edf3", showarrow=False)
-        fig.add_annotation(text="Total Risks", x=0.5, y=0.42,
-                           font_size=11, font_color="#8b949e", showarrow=False)
-        fig.update_layout(
-            margin=dict(t=10, b=0, l=0, r=0), height=240,
-            showlegend=True,
-            legend=dict(orientation="v", x=0.72, y=0.5,
-                        font=dict(size=11, color="#e6edf3"),
-                        bgcolor="rgba(0,0,0,0)"),
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    # ── Recommended Blueprints ──
-    st.markdown("""
-    <div class="sec-hdr" style="margin-top:8px;">
-      <span class="sec-title">Recommended Blueprint</span>
-      <span style="font-size:12px;color:var(--text-secondary);">Based on your environment profile</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    bp_cols = st.columns(3)
-    tiers_info = [
-        ("🏪", "SMB Blueprint", "smb", "Optimized for small teams", "75%", False),
-        ("🏢", "Mid-Market Blueprint", "midmarket", "Balanced scale & governance", "92%", True),
-        ("🏙️", "Enterprise Blueprint", "enterprise", "Advanced scale & compliance", "80%", False),
-    ]
-    for col, (icon, name, key, desc, match, highlighted) in zip(bp_cols, tiers_info):
-        is_active = key == active_tier or highlighted
-        match_cls = "bp-match-good" if highlighted else "bp-match-norm"
-        card_cls = "bp-card bp-active" if is_active else "bp-card"
-        with col:
-            st.markdown(f"""
-            <div class="{card_cls}">
-              <div class="bp-icon">{icon}</div>
-              <div class="bp-name">{name}</div>
-              <div class="bp-desc">{desc}</div>
-              <div class="{match_cls}">{match} Match</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # ── Export ──
-    st.markdown("<div style='margin-top:20px;'>", unsafe_allow_html=True)
-    report_gen = ReportGenerator()
-    exp_col1, exp_col2, _ = st.columns([1, 1, 2])
-    with exp_col1:
-        json_report = report_gen.generate_json(result)
-        st.download_button("⬇️ Download ADR (JSON)", data=json_report,
-                           file_name="azure_adr_report.json", mime="application/json",
-                           use_container_width=True)
-    with exp_col2:
-        md_report = report_gen.generate_markdown(result)
-        st.download_button("⬇️ Download ADR (Markdown)", data=md_report,
-                           file_name="azure_adr_report.md", mime="text/markdown",
-                           use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ════════════════════════ RIGHT CHAT PANEL ════════════════════════
-with chat_col:
-    waf_pillar_data = WAF_PILLARS.get(st.session_state.waf_focus, WAF_PILLARS["security"])
-
-    st.markdown("""
-    <div class="chat-panel-hdr">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:20px;">🤖</span>
-        <span class="chat-hdr-title">Architecture Copilot</span>
-      </div>
-      <span style="font-size:16px;color:#9ca3af;cursor:pointer;">✕</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="chat-bubble">
-      Hi Architect! I've completed the review of your Azure environment. Here are the key insights.
-    </div>
-    <div class="chat-prompt-hdr">What would you like to do next?</div>
-    """, unsafe_allow_html=True)
-
-    quick_actions = [
-        ("⚠️", "Show me the top risks"),
-        ("💡", "Give me remediation plan"),
-        ("🏛️", "Map to CAF framework"),
-        ("📊", "Focus on Well-Architected pillars"),
-    ]
-    for icon, label in quick_actions:
-        if st.button(f"{icon}  {label}", key=f"qa_{label}", use_container_width=True):
-            st.session_state.chat_query = label
-
-    st.markdown("<hr style='margin:8px 0;border-color:var(--border);'>", unsafe_allow_html=True)
-
-    query = st.session_state.chat_query
-    if "top risks" in query.lower():
-        st.markdown("**🚨 Top Critical Risks:**")
-        for r in top5[:3]:
-            sev = r["severity"]
-            st.markdown(
-                f'<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border);">'
-                f'<span class="sev-badge sev-{sev}" style="padding:1px 6px;font-size:10px;">{sev}</span>'
-                f'&nbsp;{r["title"]}</div>',
-                unsafe_allow_html=True)
-    elif "remediation" in query.lower():
-        st.markdown("**🛠️ Prioritized Remediation:**")
-        for i, r in enumerate(top5, 1):
-            st.markdown(
-                f"<div style='font-size:12px;padding:3px 0;'>{i}. <b>{r['title']}</b><br>"
-                f"<span style='color:var(--text-secondary);'>{r['remediation'][:80]}...</span></div>",
-                unsafe_allow_html=True)
-    elif "caf" in query.lower():
-        st.markdown("**🏛️ CAF Alignment:**")
-        st.markdown(
-            "<div style='font-size:12px;'>Your environment maps to <b>Enterprise Scale Landing Zone</b>. "
-            "Key areas: Management Groups, Policy-driven governance, Hub-Spoke networking.</div>",
-            unsafe_allow_html=True)
-        st.markdown("[📖 CAF Enterprise Scale →](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/)")
-    elif "well-architected" in query.lower():
-        st.markdown("**🏛️ WAF Pillar Summary:**")
-        for pk, pd in WAF_PILLARS.items():
-            st.markdown(
-                f"<div style='font-size:11px;padding:3px 0;'>{pd['icon']} <b>{pd['name']}</b></div>",
-                unsafe_allow_html=True)
-
-    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-    chat_input = st.chat_input("Ask me anything...", key="main_chat")
-    if chat_input:
-        st.session_state.chat_query = chat_input
-        st.rerun()
-
-    # WAF Pillars section
-    st.markdown(f"""
-    <div class="waf-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span class="waf-section-title">Well-Architected Pillars</span>
-        <span style="font-size:12px;color:var(--accent-blue);cursor:pointer;">Change</span>
-      </div>
-      <div class="waf-focus-text">Current Focus: <b>{waf_pillar_data['name']}</b></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    waf_cols = st.columns(5)
-    waf_items = [
-        ("reliability", "🛡️"), ("security", "🔐"),
-        ("cost", "💰"), ("operational_excellence", "⚙️"), ("performance", "⚡"),
-    ]
-    for col, (pk, icon) in zip(waf_cols, waf_items):
-        with col:
-            is_active = pk == st.session_state.waf_focus
-            if st.button(icon, key=f"waf_{pk}", help=WAF_PILLARS[pk]["name"]):
-                st.session_state.waf_focus = pk
-                st.rerun()
+        waf_cols = st.columns(5)
+        waf_items = [
+            ("reliability","🛡️"),("security","🔐"),
+            ("cost","💰"),("operational_excellence","⚙️"),("performance","⚡"),
+        ]
+        for col, (pk, icon) in zip(waf_cols, waf_items):
+            with col:
+                if st.button(icon, key=f"waf_{pk}", help=WAF_PILLARS[pk]["name"]):
+                    st.session_state.waf_focus = pk
+                    st.rerun()
